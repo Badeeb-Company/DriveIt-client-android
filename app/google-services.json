@@ -1,0 +1,73 @@
+{
+  "project_info": {
+    "project_number": "1013387831019",
+    "firebase_url": "https://driveit-e768a.firebaseio.com",
+    "project_id": "driveit-e768a",
+    "storage_bucket": "driveit-e768a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013387831019:android:a814458c79a65acb",
+        "android_client_info": {
+          "package_name": "com.badeeb.driveit.driver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1013387831019-48fv5d5ddvc90h7gho480qal803rk3qa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4eL86e3IMZu8E9cfNI5XktUubzSROkPc"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013387831019:android:ff3650ea6c45ba2a",
+        "android_client_info": {
+          "package_name": "com.badeeb.driveit.client"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1013387831019-48fv5d5ddvc90h7gho480qal803rk3qa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4eL86e3IMZu8E9cfNI5XktUubzSROkPc"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

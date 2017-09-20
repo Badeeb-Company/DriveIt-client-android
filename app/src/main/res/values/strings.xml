@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">DriveIt Client</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password (optional)</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">Contacts permissions are needed for providing email
+        completions.
+    </string>
+
+    <string name="login_error">Invalid Username and Password</string>
+    <string name="signup_error">Error during signup, please try later</string>
+    <string name="try_error">Try later</string>
+    <string name="enable_gps">Enable GPS</string>
+    <string name="request_again">Request another Truck</string>
+    <string name="enable_phone_call">Enable phone call permission</string>
+    <string name="driver_found">Driver found</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+</resources>
