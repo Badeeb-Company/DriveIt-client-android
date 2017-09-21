@@ -195,11 +195,6 @@ public class TripRequestFragment extends Fragment implements LocationListener {
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Move to next screen
-                                FragmentManager fragmentManager = getFragmentManager();
-
-                                RequestDialogFragment requestDialogFragment = new RequestDialogFragment();
-                                Bundle bundle = new Bundle();
-//                                bundle.putParcelable("client", Parcels.wrap(client));
 
                                 Trip trip = new Trip();
                                 trip.setId(jsonResponse.getTripId());
@@ -208,10 +203,13 @@ public class TripRequestFragment extends Fragment implements LocationListener {
                                 trip.setLat(mCurrentLocation.getLatitude());
                                 trip.setClientId(MainActivity.mclient.getId());
 
+                                RequestDialogFragment requestDialogFragment = new RequestDialogFragment();
+                                Bundle bundle = new Bundle();
                                 bundle.putParcelable("trip", Parcels.wrap(trip));
                                 requestDialogFragment.setArguments(bundle);
-
                                 requestDialogFragment.setCancelable(false);
+
+                                FragmentManager fragmentManager = getFragmentManager();
                                 requestDialogFragment.show(fragmentManager, requestDialogFragment.TAG);
                             }
                             else {
@@ -365,7 +363,8 @@ public class TripRequestFragment extends Fragment implements LocationListener {
     // Location interface methods
     @Override
     public void onLocationChanged(Location location) {
-
+        Log.d(TAG, "onLocationChanged - Start");
+        Log.d(TAG, "onLocationChanged - End");
     }
 
     @Override
