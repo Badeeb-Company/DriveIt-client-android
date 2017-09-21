@@ -1,15 +1,13 @@
-package com.badeeb.driveit.client;
+package com.badeeb.driveit.client.activity;
 
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -20,8 +18,8 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.badeeb.driveit.client.R;
 import com.badeeb.driveit.client.fragment.LoginFragment;
-import com.badeeb.driveit.client.fragment.TripRequestFragment;
 import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.JsonLogout;
 import com.badeeb.driveit.client.model.User;
@@ -30,9 +28,7 @@ import com.badeeb.driveit.client.shared.AppPreferences;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import org.json.JSONException;
 import org.json.JSONObject;
-import org.parceler.Parcels;
 
 import java.util.HashMap;
 import java.util.Map;

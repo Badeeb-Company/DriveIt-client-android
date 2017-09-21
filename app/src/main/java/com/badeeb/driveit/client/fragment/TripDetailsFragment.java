@@ -9,6 +9,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,6 +31,8 @@ import com.makeramen.roundedimageview.RoundedImageView;
 
 import org.parceler.Parcels;
 
+import static com.badeeb.driveit.client.R.id.tvRestart;
+
 /**
  * A simple {@link Fragment} subclass.
  */
@@ -37,8 +41,6 @@ public class TripDetailsFragment extends Fragment {
     // Logging Purpose
     public static final String TAG = TripDetailsFragment.class.getSimpleName();
 
-    // Class Attributes
-//    private User mclient;
     private Trip mtrip;
 
     public TripDetailsFragment() {
@@ -84,12 +86,24 @@ public class TripDetailsFragment extends Fragment {
         TextView driverPhone = view.findViewById(R.id.tdriverPhone);
         TextView driverTimeToArrive = view.findViewById(R.id.tTimeToArrive);
         TextView driverDistance = view.findViewById(R.id.tDriverDistance);
+        TextView tvRestart = view.findViewById(R.id.tvRestart);
 
-        Glide.with(getContext()).load(mtrip.getDriver_image_url()).into(driverPhoto);
+//        Glide.with(getContext()).load(mtrip.getDriver_image_url()).into(driverPhoto);
         driverName.setText(mtrip.getDriver_name());
         driverPhone.setText(mtrip.getDriver_phone());
         driverTimeToArrive.setText(mtrip.getTime_to_arrive() + "");
         driverDistance.setText(mtrip.getDistance_to_arrive() + "");
+
+        tvRestart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                TripRequestFragment tripRequestFragment = new TripRequestFragment();
+                FragmentManager fragmentManager = getFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.add(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
+                fragmentTransaction.commit();
+            }
+        });
 
         // Setup Listeners
         setupListeners(view);

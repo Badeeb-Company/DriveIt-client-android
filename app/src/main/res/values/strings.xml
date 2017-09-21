@@ -21,7 +21,7 @@
     <string name="signup_error">Error during signup, please try later</string>
     <string name="try_error">Try later</string>
     <string name="enable_gps">Enable GPS</string>
-    <string name="request_again">Request another Truck</string>
+    <string name="request_again">No nearby drivers, please try again later!</string>
     <string name="enable_phone_call">Enable phone call permission</string>
     <string name="driver_found">Driver found</string>
 
