@@ -123,6 +123,7 @@ public class RequestDialogFragment extends DialogFragment {
 
 
         // Create listener on firebase realtime - database
+
         this.mDatabase.child("clients").child(MainActivity.mclient.getId()+"").child("trip").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -267,7 +268,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mclient.getToken());
+                    headers.put("Authorization", MainActivity.mclient.getToken());
                     return headers;
                 }
             };
