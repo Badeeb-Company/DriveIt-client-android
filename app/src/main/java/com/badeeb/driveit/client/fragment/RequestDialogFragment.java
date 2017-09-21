@@ -21,19 +21,17 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.client.MainActivity;
+import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.R;
-import com.badeeb.driveit.client.model.FDBTrip;
 import com.badeeb.driveit.client.model.JsonCancelTrip;
 import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.Trip;
-import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
+import com.badeeb.driveit.client.shared.FirebaseManager;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -62,7 +60,9 @@ public class RequestDialogFragment extends DialogFragment {
     private ProgressBar mProgressBar;
 
     // Firebase database reference
-    private DatabaseReference mDatabase;
+    private FirebaseManager firebaseManager;
+    private DatabaseReference tripReference;
+    private ValueEventListener tripEventListener;
 
     public RequestDialogFragment() {
         // Required empty public constructor
@@ -93,7 +93,7 @@ public class RequestDialogFragment extends DialogFragment {
         mProgressBar = view.findViewById(R.id.progressBar);
 
         // Initiate firebase realtime - database
-        this.mDatabase = FirebaseDatabase.getInstance().getReference();
+        firebaseManager = new FirebaseManager();
 
         // Setup Listeners
         setupListeners(view);
@@ -111,8 +111,7 @@ public class RequestDialogFragment extends DialogFragment {
                 Log.d(TAG, "setupListeners - cancelRide_onClick - Start");
 
                 // Stop firebase database listener
-                removeFDBListener();
-
+                removeTripListener();
 
                 // Send cancel request
                 cancelRide();
@@ -121,14 +120,22 @@ public class RequestDialogFragment extends DialogFragment {
             }
         });
 
+        // Create listener on firebase realtime -
+        tripEventListener = createValueEventListener();
 
-        // Create listener on firebase realtime - database
+        tripReference = firebaseManager.createChildReference(FirebaseManager.CLIENTS_KEY,
+                String.valueOf(MainActivity.mclient.getId()), FirebaseManager.TRIP_KEY);
 
-        this.mDatabase.child("clients").child(MainActivity.mclient.getId()+"").child("trip").addValueEventListener(new ValueEventListener() {
+        tripReference.addValueEventListener(tripEventListener);
+
+        Log.d(TAG, "setupListeners - End");
+    }
+
+    private ValueEventListener createValueEventListener() {
+        return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Log.d(TAG, "setupListeners - mdatabase_onDataChange - Start");
-
                 if (dataSnapshot.getValue() != null) {
                     Trip fdbTrip = dataSnapshot.getValue(Trip.class);
 
@@ -147,7 +154,6 @@ public class RequestDialogFragment extends DialogFragment {
 
                         TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
                         Bundle bundle = new Bundle();
-//                        bundle.putParcelable("client", Parcels.wrap(client));
                         bundle.putParcelable("trip", Parcels.wrap(mtrip));
                         tripDetailsFragment.setArguments(bundle);
 
@@ -155,20 +161,14 @@ public class RequestDialogFragment extends DialogFragment {
                         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
                         fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
-
-                        fragmentTransaction.addToBackStack(TAG);
-
                         fragmentTransaction.commit();
-                    }
-                    else {
+                        onTripEnded();
+                    } else if(fdbTrip.getState().equals(AppPreferences.TRIP_REJECTED)) {
                         // Trip rejected
-                        Toast.makeText(getContext(), R.string.request_again, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), R.string.request_again, Toast.LENGTH_LONG).show();
+                        onTripEnded();
                     }
-
                     // Remove firebase database listener
-                    removeFDBListener();
-
-                    RequestDialogFragment.this.dismiss();
                 }
 
                 Log.d(TAG, "setupListeners - mdatabase_onDataChange - End");
@@ -181,9 +181,12 @@ public class RequestDialogFragment extends DialogFragment {
 
                 Log.d(TAG, "setupListeners - mdatabase_onCancelled - End");
             }
-        });
+        };
+    }
 
-        Log.d(TAG, "setupListeners - End");
+    private void onTripEnded(){
+        dismiss();
+        removeTripListener();
     }
 
     private void cancelRide() {
@@ -202,7 +205,7 @@ public class RequestDialogFragment extends DialogFragment {
 
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
-            Log.d(TAG, "cancelRide - Json Request"+ gson.toJson(request));
+            Log.d(TAG, "cancelRide - Json Request" + gson.toJson(request));
 
             // Call request Truck service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
@@ -227,8 +230,7 @@ public class RequestDialogFragment extends DialogFragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Move to next screen
 
-                            }
-                            else {
+                            } else {
                                 // Invalid login
                                 Toast.makeText(getContext(), getString(R.string.try_error), Toast.LENGTH_SHORT).show();
                             }
@@ -287,10 +289,10 @@ public class RequestDialogFragment extends DialogFragment {
         Log.d(TAG, "cancelRide - End");
     }
 
-    private void removeFDBListener() {
-        Log.d(TAG, "removeFDBListener - Start");
-
-        Log.d(TAG, "removeFDBListener - End");
+    private void removeTripListener() {
+        Log.d(TAG, "removeTripListener - Start");
+        tripReference.removeEventListener(tripEventListener);
+        Log.d(TAG, "removeTripListener - End");
     }
 
 }

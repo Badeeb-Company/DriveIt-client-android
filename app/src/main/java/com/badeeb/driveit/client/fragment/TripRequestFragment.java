@@ -30,11 +30,10 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.client.MainActivity;
+import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.R;
 import com.badeeb.driveit.client.model.JsonRequestTrip;
 import com.badeeb.driveit.client.model.Trip;
-import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
 import com.google.gson.Gson;
@@ -126,12 +125,9 @@ public class TripRequestFragment extends Fragment implements LocationListener {
                 // Get current location
                 mCurrentLocation = getCurrentLocation();
 
-
                 if (mCurrentLocation != null) {
-
                     // Get current Address string
                     mCurrentAddress = getCurrentAddress(mCurrentLocation);
-
                     // Send Request truck to server
                     requestTruck();
                 }
@@ -146,19 +142,7 @@ public class TripRequestFragment extends Fragment implements LocationListener {
     private void requestTruck() {
         Log.d(TAG, "requestTruck - Start");
 
-//        FragmentManager fragmentManager = getFragmentManager();
-//
-//        RequestDialogFragment requestDialogFragment = new RequestDialogFragment();
-//        Bundle bundle = new Bundle();
-//        bundle.putParcelable("client", Parcels.wrap(client));
-//        requestDialogFragment.setArguments(bundle);
-//
-//        requestDialogFragment.setCancelable(false);
-//        requestDialogFragment.show(fragmentManager, requestDialogFragment.TAG);
-
-
         try {
-
             JsonRequestTrip request = new JsonRequestTrip();
             request.setLat(mCurrentLocation.getLatitude() + "");
             request.setLng(mCurrentLocation.getLongitude() + "");
@@ -177,7 +161,6 @@ public class TripRequestFragment extends Fragment implements LocationListener {
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
 
                     new Response.Listener<JSONObject>() {
-
                         @Override
                         public void onResponse(JSONObject response) {
                             // Response Handling

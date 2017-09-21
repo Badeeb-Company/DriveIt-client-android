@@ -1,6 +1,7 @@
 package com.badeeb.driveit.client.fragment;
 
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -9,7 +10,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,18 +26,18 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.client.MainActivity;
+import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.R;
 import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
+import com.badeeb.driveit.client.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.parceler.Parcels;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,8 +54,8 @@ public class LoginFragment extends Fragment {
     private User client;
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
-    private View mProgressView;
     private Toolbar mToolbar;
+    private ProgressDialog progressDialog;
 
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/client/login";
@@ -72,6 +72,7 @@ public class LoginFragment extends Fragment {
 
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_login, container, false);
+        progressDialog = UiUtils.createProgressDialog(getActivity());
 
         init(view);
 
@@ -102,8 +103,6 @@ public class LoginFragment extends Fragment {
         this.mEmailView = (AutoCompleteTextView) view.findViewById(R.id.email);
         // Password
         this.mPasswordView = (EditText) view.findViewById(R.id.password);
-        // Progress bar
-        this.mProgressView = view.findViewById(R.id.progressBar);
 
         // Setup listeners
         setupListeners(view);
@@ -125,7 +124,7 @@ public class LoginFragment extends Fragment {
                 Log.d(TAG, "setupListeners - signIn_onclick - Start");
 
                 // Enable Progress bar
-                mProgressView.setVisibility(View.VISIBLE);
+                progressDialog.show();
 
                 String userEmail = mEmailView.getText().toString();
                 String userPassword = mPasswordView.getText().toString();
@@ -234,7 +233,7 @@ public class LoginFragment extends Fragment {
                             }
 
                             // Disable progress bar
-                            mProgressView.setVisibility(View.GONE);
+                            progressDialog.dismiss();
 
                             Log.d(TAG, "login - onResponse - End");
                         }
@@ -260,7 +259,7 @@ public class LoginFragment extends Fragment {
                             }
 
                             // Disable progress bar
-                            mProgressView.setVisibility(View.GONE);
+                            progressDialog.dismiss();
 
                         }
                     }

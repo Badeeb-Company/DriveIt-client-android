@@ -1,6 +1,7 @@
 package com.badeeb.driveit.client.fragment;
 
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -21,12 +22,13 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.client.MainActivity;
+import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.R;
 import com.badeeb.driveit.client.model.JsonSignUp;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
+import com.badeeb.driveit.client.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.makeramen.roundedimageview.RoundedImageView;
@@ -48,7 +50,7 @@ public class SignupFragment extends Fragment {
     // Class Attributes
 //    private User user;
 
-    private View mProgressView;
+    private ProgressDialog progressDialog;
 
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/client";
@@ -71,6 +73,9 @@ public class SignupFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_signup, container, false);
 
         init(view);
+        progressDialog = UiUtils.createProgressDialog(getActivity());
+
+
 
         Log.d(TAG, "onCreateView - End");
         return view;
@@ -81,8 +86,6 @@ public class SignupFragment extends Fragment {
 
         // Attributes initialization
         MainActivity.mclient = new User();
-
-        this.mProgressView = view.findViewById(R.id.progressBar);
 
         // Setup listeners
         setupListeners(view);
@@ -102,7 +105,9 @@ public class SignupFragment extends Fragment {
                 Log.d(TAG, "setupListeners - signUpBttn_onClick - Start");
 
                 // Enable Progress bar
-                mProgressView.setVisibility(View.VISIBLE);
+                progressDialog.show();
+//                ProgressDialog dialog = ProgressDialog.show(getActivity(), "",
+//                        "Loading. Please wait...", true);
 
                 EditText name = (EditText) view.findViewById(R.id.name);
                 EditText email = (EditText) view.findViewById(R.id.email);
@@ -192,11 +197,11 @@ public class SignupFragment extends Fragment {
                             }
                             else {
                                 // Invalid Signup
-                                Toast.makeText(getContext(), getString(R.string.signup_error), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), getString(R.string.signup_error), Toast.LENGTH_LONG).show();
                             }
 
                             // Disable Progress bar
-                            mProgressView.setVisibility(View.GONE);
+                            progressDialog.dismiss();
 
                             Log.d(TAG, "signup - onResponse - End");
                         }
@@ -224,7 +229,7 @@ public class SignupFragment extends Fragment {
                                 Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
                             }
                             // Disable Progress bar
-                            mProgressView.setVisibility(View.GONE);
+                            progressDialog.dismiss();
                         }
                     }
             ) {
