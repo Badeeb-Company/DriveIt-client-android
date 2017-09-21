@@ -270,7 +270,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", MainActivity.mclient.getToken());
+                    headers.put("Authorization", "Token token=" + MainActivity.mclient.getToken());
                     return headers;
                 }
             };
