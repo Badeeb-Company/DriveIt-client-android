@@ -106,8 +106,6 @@ public class SignupFragment extends Fragment {
 
                 // Enable Progress bar
                 progressDialog.show();
-//                ProgressDialog dialog = ProgressDialog.show(getActivity(), "",
-//                        "Loading. Please wait...", true);
 
                 EditText name = (EditText) view.findViewById(R.id.name);
                 EditText email = (EditText) view.findViewById(R.id.email);

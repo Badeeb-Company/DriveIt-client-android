@@ -2,6 +2,7 @@ package com.badeeb.driveit.client.fragment;
 
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -13,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -211,9 +213,6 @@ public class LoginFragment extends Fragment {
                                 // Move to next screen --> Main Activity
                                 // Fragment creation
                                 TripRequestFragment tripRequestFragment = new TripRequestFragment();
-//                                Bundle bundle = new Bundle();
-//                                bundle.putParcelable("client", Parcels.wrap(jsonResponse.getUser()));
-//                                tripRequestFragment.setArguments(bundle);
 
                                 MainActivity.mclient = jsonResponse.getUser();
 
@@ -225,11 +224,15 @@ public class LoginFragment extends Fragment {
                                 fragmentTransaction.addToBackStack(TAG);
 
                                 fragmentTransaction.commit();
-
+                                View view = getActivity().getCurrentFocus();
+                                if (view != null) {
+                                    InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                                }
                             }
                             else {
                                 // Invalid login
-                                Toast.makeText(getContext(), getString(R.string.login_error), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), getString(R.string.login_error), Toast.LENGTH_LONG).show();
                             }
 
                             // Disable progress bar

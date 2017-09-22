@@ -48,6 +48,8 @@ import java.util.Map;
  */
 public class RequestDialogFragment extends DialogFragment {
 
+    private static enum RequestStatus {NONE, PENDING, ACCEPTED, NOT_SERVED}
+
     // Logging Purpose
     public static final String TAG = RequestDialogFragment.class.getSimpleName();
 
@@ -57,6 +59,10 @@ public class RequestDialogFragment extends DialogFragment {
     // Class Attributes
 //    private User client;
     private Trip mtrip;
+    private boolean paused;
+    private boolean needsToDismissDialog;
+    private RequestStatus requestStatus;
+    private boolean tripAccepted;
     private ProgressBar mProgressBar;
 
     // Firebase database reference
@@ -89,6 +95,9 @@ public class RequestDialogFragment extends DialogFragment {
         // Get client object from extra
 //        this.client = Parcels.unwrap(getArguments().getParcelable("client"));
         this.mtrip = Parcels.unwrap(getArguments().getParcelable("trip"));
+        paused = false;
+        needsToDismissDialog = false;
+        requestStatus = RequestStatus.NONE;
 
         mProgressBar = view.findViewById(R.id.progressBar);
 
@@ -138,7 +147,6 @@ public class RequestDialogFragment extends DialogFragment {
                 Log.d(TAG, "setupListeners - mdatabase_onDataChange - Start");
                 if (dataSnapshot.getValue() != null) {
                     Trip fdbTrip = dataSnapshot.getValue(Trip.class);
-
                     // Check if trip is accepted or rejected
                     if (fdbTrip.getState().equals(AppPreferences.TRIP_ACCEPTED)) {
                         // Trip accepted
@@ -152,21 +160,17 @@ public class RequestDialogFragment extends DialogFragment {
 
                         mtrip = fdbTrip;
 
-                        TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
-                        Bundle bundle = new Bundle();
-                        bundle.putParcelable("trip", Parcels.wrap(mtrip));
-                        tripDetailsFragment.setArguments(bundle);
-
-                        FragmentManager fragmentManager = getFragmentManager();
-                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-                        fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
-                        fragmentTransaction.commit();
-                        onTripEnded();
-                    } else if(fdbTrip.getState().equals(AppPreferences.TRIP_REJECTED)) {
+                        requestStatus = RequestStatus.ACCEPTED;
+                        if (!paused) {
+                            onTripAccepted();
+                        }
+                    } else if (fdbTrip.getState().equals(AppPreferences.TRIP_REJECTED)) {
                         // Trip rejected
                         Toast.makeText(getContext(), R.string.request_again, Toast.LENGTH_LONG).show();
-                        onTripEnded();
+                        requestStatus = RequestStatus.NOT_SERVED;
+                        if (!paused) {
+                            onTripNotServed();
+                        }
                     }
                     // Remove firebase database listener
                 }
@@ -184,9 +188,50 @@ public class RequestDialogFragment extends DialogFragment {
         };
     }
 
+    private void onTripAccepted() {
+        TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("trip", Parcels.wrap(mtrip));
+        tripDetailsFragment.setArguments(bundle);
+
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
+        fragmentTransaction.commit();
+        dismiss();
+        removeTripListener();
+        requestStatus = RequestStatus.NONE;
+    }
+
+    private void onTripNotServed() {
+        onTripEnded();
+    }
+
     private void onTripEnded(){
         dismiss();
         removeTripListener();
+        requestStatus = RequestStatus.NONE;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        paused = true;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        paused = false;
+        switch (requestStatus) {
+            case NOT_SERVED:
+                onTripNotServed();
+                break;
+            case ACCEPTED:
+                onTripAccepted();
+                break;
+        }
     }
 
     private void cancelRide() {

@@ -88,11 +88,11 @@ public class TripDetailsFragment extends Fragment {
         TextView driverDistance = view.findViewById(R.id.tDriverDistance);
         TextView tvRestart = view.findViewById(R.id.tvRestart);
 
-//        Glide.with(getContext()).load(mtrip.getDriver_image_url()).into(driverPhoto);
+        Glide.with(getContext()).load(mtrip.getDriver_image_url()).into(driverPhoto);
         driverName.setText(mtrip.getDriver_name());
         driverPhone.setText(mtrip.getDriver_phone());
-        driverTimeToArrive.setText(mtrip.getTime_to_arrive() + "");
-        driverDistance.setText(mtrip.getDistance_to_arrive() + "");
+        driverTimeToArrive.setText((int)(mtrip.getTime_to_arrive()/60) + " minutes");
+        driverDistance.setText(mtrip.getDistance_to_arrive()/1000 + " kilometers");
 
         tvRestart.setOnClickListener(new View.OnClickListener() {
             @Override

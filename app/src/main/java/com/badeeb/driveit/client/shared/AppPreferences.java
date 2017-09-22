@@ -12,6 +12,7 @@ import android.net.NetworkInfo;
 
 public class AppPreferences {
 
+    public static final String TOKEN_KEY = "TOKEN_KEY";
     // For logging purpose
     public static final String TAG = AppPreferences.class.getName();
 
@@ -29,6 +30,16 @@ public class AppPreferences {
 
     public static SharedPreferences getAppPreferences(Context context) {
         return context.getSharedPreferences(TAG, Activity.MODE_PRIVATE);
+    }
+
+    public static void setToken(Context context, String value){
+        SharedPreferences.Editor editor = getAppPreferences(context).edit();
+        editor.putString(TOKEN_KEY, value);
+        editor.commit();
+    }
+
+    public static String getToken(Context context){
+        return getAppPreferences(context).getString(TOKEN_KEY, null);
     }
 
     public static boolean isNetworkAvailable(Context context) {
