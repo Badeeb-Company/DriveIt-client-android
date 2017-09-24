@@ -42,8 +42,8 @@ public class UiUtils {
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
     }
 
-    public static ProgressDialog createProgressDialog(Context context){
-        ProgressDialog progressDialog = new ProgressDialog(context);
+    public static ProgressDialog createProgressDialog(Context context, int style){
+        ProgressDialog progressDialog = new ProgressDialog(context, style);
         progressDialog.setMessage("Loading. Please wait...");
         progressDialog.setCancelable(false);
         return progressDialog;

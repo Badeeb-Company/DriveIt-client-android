@@ -48,10 +48,8 @@ public class SignupFragment extends Fragment {
     public static final String TAG = SignupFragment.class.getSimpleName();
 
     // Class Attributes
-//    private User user;
 
     private ProgressDialog progressDialog;
-
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/client";
 
@@ -73,9 +71,6 @@ public class SignupFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_signup, container, false);
 
         init(view);
-        progressDialog = UiUtils.createProgressDialog(getActivity());
-
-
 
         Log.d(TAG, "onCreateView - End");
         return view;
@@ -86,6 +81,7 @@ public class SignupFragment extends Fragment {
 
         // Attributes initialization
         MainActivity.mclient = new User();
+		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
 
         // Setup listeners
         setupListeners(view);

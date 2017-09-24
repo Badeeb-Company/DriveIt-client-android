@@ -6,7 +6,8 @@
     android:minHeight="200dp"
     android:gravity="center"
     android:padding="20dp"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    >
 
     <!-- Login progress -->
     <ProgressBar

@@ -18,6 +18,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -74,7 +75,6 @@ public class LoginFragment extends Fragment {
 
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_login, container, false);
-        progressDialog = UiUtils.createProgressDialog(getActivity());
 
         init(view);
 
@@ -105,6 +105,8 @@ public class LoginFragment extends Fragment {
         this.mEmailView = (AutoCompleteTextView) view.findViewById(R.id.email);
         // Password
         this.mPasswordView = (EditText) view.findViewById(R.id.password);
+        // Progress bar
+		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
 
         // Setup listeners
         setupListeners(view);
@@ -142,8 +144,8 @@ public class LoginFragment extends Fragment {
         });
 
         // Signup button listener
-        Button signup = (Button) view.findViewById(R.id.sign_up);
-        signup.setOnClickListener(new View.OnClickListener() {
+        TextView tvSignup = view.findViewById(R.id.tvSignup);
+        tvSignup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "setupListeners - signup_onclick - Start");
