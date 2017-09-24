@@ -11,7 +11,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -29,8 +28,8 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.R;
+import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
@@ -89,8 +88,8 @@ public class LoginFragment extends Fragment {
 
         super.onPrepareOptionsMenu(menu);
 
-        MenuItem logout = menu.findItem(R.id.nav_logout);
-        logout.setVisible(false);
+//        MenuItem logout = menu.findItem(R.id.nav_logout);
+//        logout.setVisible(false);
 
         Log.d(TAG, "onPrepareOptionsMenu - End");
     }
@@ -112,7 +111,7 @@ public class LoginFragment extends Fragment {
         setupListeners(view);
 
         // Refresh menu toolbar
-        setHasOptionsMenu(true);
+        ((MainActivity) getActivity()).disbleNavigationView();
 
         Log.d(TAG, "init - End");
     }

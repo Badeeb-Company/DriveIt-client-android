@@ -86,6 +86,9 @@ public class SignupFragment extends Fragment {
         // Setup listeners
         setupListeners(view);
 
+        // Refresh menu toolbar
+        ((MainActivity) getActivity()).disbleNavigationView();
+
         Log.d(TAG, "init - End");
     }
 

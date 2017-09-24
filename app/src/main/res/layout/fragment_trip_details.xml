@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="20dp"
-    android:background="@color/iron"
+    android:background="@color/white"
     android:clickable="true"
     >
 
@@ -22,7 +22,7 @@
             android:paddingBottom="10dp"
             android:text="Your driver is on his way to you!"
             android:textStyle="bold|italic"
-            android:textColor="@color/colorPrimaryDark"
+            android:textColor="@color/red"
             android:textSize="20sp"
             />
 
@@ -57,6 +57,7 @@
                 android:layout_weight="1"
                 android:id="@+id/tDriverName"
                 android:textSize="18sp"
+                android:textColor="@color/light_black"
                 />
 
         </LinearLayout>
@@ -80,7 +81,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/tdriverPhone"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textColor="@color/light_black"
+                />
 
         </LinearLayout>
 
@@ -106,6 +109,7 @@
                 android:layout_weight="1"
                 android:id="@+id/tTimeToArrive"
                 android:textSize="18sp"
+                android:textColor="@color/light_black"
                 />
 
         </LinearLayout>
@@ -131,7 +135,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:id="@+id/tDriverDistance"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textColor="@color/light_black"
+                />
 
         </LinearLayout>
 
@@ -167,7 +173,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Start another ride"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@color/red"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 />

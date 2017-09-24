@@ -91,7 +91,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/sign_up_txt"
                 android:textSize="16sp"
-                android:textColor="@color/colorPrimaryDark"
+                android:textColor="@color/red"
                 android:textStyle="bold"
                 />
 

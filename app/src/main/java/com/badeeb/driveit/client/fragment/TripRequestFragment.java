@@ -30,8 +30,8 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.R;
+import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.model.JsonRequestTrip;
 import com.badeeb.driveit.client.model.Trip;
 import com.badeeb.driveit.client.network.MyVolley;
@@ -106,7 +106,7 @@ public class TripRequestFragment extends Fragment implements LocationListener {
         setupListeners(view);
 
         // Refresh menu toolbar
-        setHasOptionsMenu(true);
+        ((MainActivity) getActivity()).enbleNavigationView();
 
         Log.d(TAG, "init - End");
     }

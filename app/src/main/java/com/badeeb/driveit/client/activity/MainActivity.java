@@ -1,12 +1,15 @@
 package com.badeeb.driveit.client.activity;
 
+import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.widget.Toast;
 
@@ -33,7 +36,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     // Logging Purpose
     private final String TAG = MainActivity.class.getSimpleName();
@@ -41,7 +44,9 @@ public class MainActivity extends AppCompatActivity {
     // Class attributes
     private Toolbar mtoolbar;
     private FragmentManager mFragmentManager;
-    private MenuItem mlogoutItem;
+    private DrawerLayout mdrawer;
+    private ActionBarDrawerToggle mtoggle;
+    private NavigationView mnavigationView;
 
     public static User mclient;
 
@@ -50,15 +55,13 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate - Start");
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_navigation);
 
         init();
 
         Log.d(TAG, "onCreate - End");
     }
 
-    private void init() {
-        Log.d(TAG, "init - Start");
 
         // Initialize Attributes
         mFragmentManager = getSupportFragmentManager();

@@ -2,7 +2,6 @@ package com.badeeb.driveit.client.fragment;
 
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -14,24 +13,19 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.badeeb.driveit.client.R;
+import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.model.Trip;
-import com.badeeb.driveit.client.model.User;
 import com.bumptech.glide.Glide;
 import com.makeramen.roundedimageview.RoundedImageView;
 
 import org.parceler.Parcels;
-
-import static com.badeeb.driveit.client.R.id.tvRestart;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -60,18 +54,6 @@ public class TripDetailsFragment extends Fragment {
         Log.d(TAG, "onCreateView - End");
 
         return view;
-    }
-
-    @Override
-    public void onPrepareOptionsMenu(Menu menu) {
-        Log.d(TAG, "onPrepareOptionsMenu - Start");
-
-        super.onPrepareOptionsMenu(menu);
-
-        MenuItem logout = menu.findItem(R.id.nav_logout);
-        logout.setVisible(true);
-
-        Log.d(TAG, "onPrepareOptionsMenu - End");
     }
 
     private void init(View view) {
@@ -113,7 +95,7 @@ public class TripDetailsFragment extends Fragment {
         setupListeners(view);
 
         // Refresh menu toolbar
-        setHasOptionsMenu(true);
+        ((MainActivity) getActivity()).enbleNavigationView();
 
         Log.d(TAG, "init - End");
     }
