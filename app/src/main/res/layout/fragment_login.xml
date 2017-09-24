@@ -21,7 +21,7 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="24dp"
             android:contentDescription=""
-            android:src="@drawable/logo" />
+            android:src="@drawable/small_logo" />
 
         <!-- Email = Username -->
         <android.support.design.widget.TextInputLayout
@@ -66,16 +66,37 @@
             android:layout_marginBottom="24dp"
             android:layout_marginTop="24dp"
             android:text="@string/sign_in_txt"
+            android:textAllCaps="true"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/tvSignup"
-            android:layout_width="fill_parent"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal"
             android:layout_marginBottom="24dp"
-            android:gravity="center"
-            android:text="@string/sign_up_txt"
-            android:textSize="16dip" />
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sign_up_prefix"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                />
+
+            <TextView
+                android:id="@+id/tvSignup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sign_up_txt"
+                android:textSize="16sp"
+                android:textColor="@color/colorPrimaryDark"
+                android:textStyle="bold"
+                />
+
+        </LinearLayout>
+
 
     </LinearLayout>
 </ScrollView>

@@ -3,9 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:padding="20dp"
-    android:background="@color/white"
+    android:background="@color/iron"
     android:clickable="true"
     >
 
@@ -21,7 +21,10 @@
             android:layout_gravity="center"
             android:paddingBottom="10dp"
             android:text="Your driver is on his way to you!"
-            android:textSize="16sp" />
+            android:textStyle="bold|italic"
+            android:textColor="@color/colorPrimaryDark"
+            android:textSize="20sp"
+            />
 
         <com.makeramen.roundedimageview.RoundedImageView
             android:id="@+id/iProfileImage"
@@ -43,15 +46,18 @@
                 android:layout_height="wrap_content"
                 android:layout_marginRight="10dp"
                 android:text="Name:"
-                android:textColor="#000"
-                android:textSize="18sp" />
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                />
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:id="@+id/tDriverName"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                />
 
         </LinearLayout>
 
@@ -66,7 +72,9 @@
                 android:layout_marginRight="10dp"
                 android:text="Phone:"
                 android:textColor="#000"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textStyle="bold"
+                />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -88,14 +96,17 @@
                 android:layout_marginRight="10dp"
                 android:text="Time to arrive:"
                 android:textColor="#000"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textStyle="bold"
+                />
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:id="@+id/tTimeToArrive"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                />
 
         </LinearLayout>
 
@@ -111,7 +122,9 @@
                 android:layout_marginRight="10dp"
                 android:text="Distance to arrive:"
                 android:textColor="#000"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textStyle="bold"
+                />
 
             <TextView
                 android:layout_width="0dp"
@@ -129,7 +142,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginBottom="40dp"
-            android:text="Call Driver" />
+            android:text="Call Driver"
+            android:textStyle="bold"
+            />
 
 
         <LinearLayout
@@ -142,15 +157,20 @@
                 android:layout_height="wrap_content"
                 android:paddingRight="10dp"
                 android:text="Ride ended?"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                />
 
             <TextView
                 android:id="@+id/tvRestart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Start another ride"
-                android:textColor="#0000FF"
-                android:textSize="18sp" />
+                android:textColor="@color/colorPrimaryDark"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                />
 
         </LinearLayout>
 

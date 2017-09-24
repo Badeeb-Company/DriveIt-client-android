@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -145,6 +146,7 @@ public class RequestDialogFragment extends DialogFragment {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Log.d(TAG, "setupListeners - mdatabase_onDataChange - Start");
+                onTripAccepted();
                 if (dataSnapshot.getValue() != null) {
                     Trip fdbTrip = dataSnapshot.getValue(Trip.class);
                     // Check if trip is accepted or rejected
@@ -161,6 +163,7 @@ public class RequestDialogFragment extends DialogFragment {
                         mtrip = fdbTrip;
 
                         requestStatus = RequestStatus.ACCEPTED;
+
                         if (!paused) {
                             onTripAccepted();
                         }
@@ -189,6 +192,14 @@ public class RequestDialogFragment extends DialogFragment {
     }
 
     private void onTripAccepted() {
+
+        mtrip = new Trip();
+        mtrip.setDriver_address("Driver Address");
+        mtrip.setDriver_id(1);
+        mtrip.setDistance_to_arrive(100);
+        mtrip.setDriver_name("Amr Alghawy");
+        mtrip.setDriver_phone("01286353574");
+
         TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
         Bundle bundle = new Bundle();
         bundle.putParcelable("trip", Parcels.wrap(mtrip));
@@ -232,6 +243,7 @@ public class RequestDialogFragment extends DialogFragment {
                 onTripAccepted();
                 break;
         }
+        getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.dialog_rounded_corner));
     }
 
     private void cancelRide() {

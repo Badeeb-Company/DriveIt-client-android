@@ -9,7 +9,8 @@
     <string name="prompt_password">Password (optional)</string>
     <string name="action_sign_in">Sign in or register</string>
     <string name="sign_in_txt">Sign in</string>
-    <string name="sign_up_txt">No account yet? Create one</string>
+    <string name="sign_up_prefix">"No account yet? "</string>
+    <string name="sign_up_txt">Create one</string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_invalid_password">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
