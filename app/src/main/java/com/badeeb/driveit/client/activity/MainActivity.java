@@ -62,48 +62,64 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "onCreate - End");
     }
 
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+
+        Log.d(TAG, "onNavigationItemSelected - Start");
+
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_logout) {
+            // Handle the logout action
+            Log.d(TAG, "onNavigationItemSelected - Logout - Start");
+            goToLogin();
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+
+        Log.d(TAG, "onNavigationItemSelected - End");
+
+        return true;
+    }
+
+    private void init() {
+        Log.d(TAG, "init - Start");
 
         // Initialize Attributes
         mFragmentManager = getSupportFragmentManager();
 
         // Toolbar
-        this.mtoolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(this.mtoolbar);
+        mtoolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mtoolbar);
 
+
+        mdrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mtoggle = new ActionBarDrawerToggle(
+                this, mdrawer, mtoolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mdrawer.setDrawerListener(mtoggle);
+        mtoggle.syncState();
+
+        mnavigationView = (NavigationView) findViewById(R.id.nav_view);
+        mnavigationView.setNavigationItemSelectedListener(this);
 
         // Load Login Fragment inside Main activity
-        // Fragment creation
+        // Load Login Fragment
         goToLogin();
 
-
         Log.d(TAG, "init - End");
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        Log.d(TAG, "onCreateOptionsMenu - Start");
-
-        getMenuInflater().inflate(R.menu.menu, menu);
-
-        mlogoutItem = menu.findItem(R.id.nav_logout);
-
-        mlogoutItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                Log.d(TAG, "setupListeners - mlogoutItem_onMenuItemClick - Start");
-
-//                logout();
-                goToLogin();
-
-
-                Log.d(TAG, "setupListeners - mlogoutItem_onMenuItemClick - End");
-                return false;
-            }
-        });
-
-        Log.d(TAG, "onCreateOptionsMenu - End");
-        return true;
     }
 
     private void goToLogin(){
@@ -111,6 +127,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
         fragmentTransaction.commit();
+    }
+
+    public void disbleNavigationView() {
+        mdrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        mtoggle.setDrawerIndicatorEnabled(false);
+    }
+
+    public void enbleNavigationView() {
+        mdrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        mtoggle.setDrawerIndicatorEnabled(true);
     }
 
     private void logout() {
@@ -211,4 +237,5 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         Log.d(TAG, "logout - End");
     }
+
 }
