@@ -69,7 +69,6 @@ public class TripRequestFragment extends Fragment implements LocationListener {
         // Required empty public constructor
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -184,7 +183,7 @@ public class TripRequestFragment extends Fragment implements LocationListener {
                                 trip.setDestination(mCurrentAddress);
                                 trip.setLng(mCurrentLocation.getLongitude());
                                 trip.setLat(mCurrentLocation.getLatitude());
-                                trip.setClientId(MainActivity.mclient.getId());
+                                trip.setClientId(((MainActivity)getActivity()).getClient().getId());
 
                                 RequestDialogFragment requestDialogFragment = new RequestDialogFragment();
                                 Bundle bundle = new Bundle();
@@ -235,7 +234,7 @@ public class TripRequestFragment extends Fragment implements LocationListener {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mclient.getToken());
+                    headers.put("Authorization", "Token token=" + ((MainActivity)getActivity()).getClient().getToken());
 
                     return headers;
                 }

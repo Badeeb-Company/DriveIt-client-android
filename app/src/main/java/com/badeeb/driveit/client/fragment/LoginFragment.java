@@ -34,6 +34,7 @@ import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
+import com.badeeb.driveit.client.shared.Settings;
 import com.badeeb.driveit.client.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -58,6 +59,7 @@ public class LoginFragment extends Fragment {
     private EditText mPasswordView;
     private Toolbar mToolbar;
     private ProgressDialog progressDialog;
+    private User mclient;
 
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/client/login";
@@ -87,10 +89,6 @@ public class LoginFragment extends Fragment {
         Log.d(TAG, "onPrepareOptionsMenu - Start");
 
         super.onPrepareOptionsMenu(menu);
-
-//        MenuItem logout = menu.findItem(R.id.nav_logout);
-//        logout.setVisible(false);
-
         Log.d(TAG, "onPrepareOptionsMenu - End");
     }
 
@@ -99,7 +97,7 @@ public class LoginFragment extends Fragment {
         Log.d(TAG, "init - Start");
 
         // Attributes Initialization
-        MainActivity.mclient = new User();
+        mclient = new User();
         // Email
         this.mEmailView = (AutoCompleteTextView) view.findViewById(R.id.email);
         // Password
@@ -132,8 +130,8 @@ public class LoginFragment extends Fragment {
                 String userEmail = mEmailView.getText().toString();
                 String userPassword = mPasswordView.getText().toString();
 
-                MainActivity.mclient.setEmail(userEmail);
-                MainActivity.mclient.setPassword(userPassword);
+                mclient.setEmail(userEmail);
+                mclient.setPassword(userPassword);
 
                 // Check login using network call
                 login();
@@ -155,11 +153,8 @@ public class LoginFragment extends Fragment {
 
                 FragmentManager fragmentManager = getFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
                 fragmentTransaction.add(R.id.main_frame, signupFragment, signupFragment.TAG);
-
                 fragmentTransaction.addToBackStack(TAG);
-
                 fragmentTransaction.commit();
 
                 Log.d(TAG, "setupListeners - signup_onclick - End");
@@ -178,7 +173,7 @@ public class LoginFragment extends Fragment {
         try {
 
             JsonLogin request = new JsonLogin();
-            request.setUser(MainActivity.mclient);
+            request.setUser(mclient);
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
@@ -215,21 +210,19 @@ public class LoginFragment extends Fragment {
                                 // Fragment creation
                                 TripRequestFragment tripRequestFragment = new TripRequestFragment();
 
-                                MainActivity.mclient = jsonResponse.getUser();
+                                User responseClient = jsonResponse.getUser();
+
+                                ((MainActivity)getActivity()).setClient(responseClient);
+
+                                Settings settings = Settings.getInstance();
+                                settings.saveUser(responseClient);
 
                                 FragmentManager fragmentManager = getFragmentManager();
                                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
                                 fragmentTransaction.add(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
-
-                                fragmentTransaction.addToBackStack(TAG);
-
                                 fragmentTransaction.commit();
-                                View view = getActivity().getCurrentFocus();
-                                if (view != null) {
-                                    InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                                }
+
+                                UiUtils.hideActivityShownKeyboard(getActivity());
                             }
                             else {
                                 // Invalid login

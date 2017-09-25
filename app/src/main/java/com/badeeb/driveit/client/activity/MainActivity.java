@@ -23,11 +23,13 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.badeeb.driveit.client.R;
 import com.badeeb.driveit.client.fragment.LoginFragment;
+import com.badeeb.driveit.client.fragment.TripRequestFragment;
 import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.JsonLogout;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
+import com.badeeb.driveit.client.shared.Settings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -47,8 +49,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private DrawerLayout mdrawer;
     private ActionBarDrawerToggle mtoggle;
     private NavigationView mnavigationView;
+    private Settings msettings;
 
-    public static User mclient;
+    private User mclient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_logout) {
             // Handle the logout action
             Log.d(TAG, "onNavigationItemSelected - Logout - Start");
+            msettings.clearUserInfo();
             goToLogin();
         }
 
@@ -100,6 +104,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Initialize Attributes
         mFragmentManager = getSupportFragmentManager();
+        msettings = Settings.getInstance();
 
         // Toolbar
         mtoolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -117,7 +122,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Load Login Fragment inside Main activity
         // Load Login Fragment
-        goToLogin();
+        if(msettings.isLoggedIn()){
+            mclient = msettings.getUser();
+            TripRequestFragment tripRequestFragment = new TripRequestFragment();
+            FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+            fragmentTransaction.add(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
+            fragmentTransaction.commit();
+        } else {
+            goToLogin();
+        }
+
 
         Log.d(TAG, "init - End");
     }
@@ -137,6 +151,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void enbleNavigationView() {
         mdrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
         mtoggle.setDrawerIndicatorEnabled(true);
+    }
+
+    public void setClient(User client){
+        mclient = client;
+    }
+
+    public User getClient(){
+        return mclient;
     }
 
     private void logout() {
@@ -221,7 +243,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mclient.getToken());
+                    headers.put("Authorization", "Token token=" + MainActivity.this.mclient.getToken());
                     return headers;
                 }
             };

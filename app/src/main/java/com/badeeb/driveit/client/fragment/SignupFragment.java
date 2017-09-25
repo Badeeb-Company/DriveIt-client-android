@@ -53,6 +53,8 @@ public class SignupFragment extends Fragment {
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/client";
 
+    private User mClient;
+
     //
     private static final int PERMISSION_READ_STORAGE = 145;
     private static final int IMAGE_GALLERY_REQUEST = 10;
@@ -80,7 +82,7 @@ public class SignupFragment extends Fragment {
         Log.d(TAG, "init - Start");
 
         // Attributes initialization
-        MainActivity.mclient = new User();
+        mClient = new User();
 		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
 
         // Setup listeners
@@ -112,11 +114,11 @@ public class SignupFragment extends Fragment {
                 EditText phone = (EditText) view.findViewById(R.id.phone);
                 RoundedImageView profileImage = (RoundedImageView) view.findViewById(R.id.profile_image);
 
-                MainActivity.mclient.setName(name.getText().toString());
-                MainActivity.mclient.setEmail(email.getText().toString());
-                MainActivity.mclient.setPassword(password.getText().toString());
-                MainActivity.mclient.setPhotoUrl("http://solarviews.com/raw/earth/earthafr.jpg"); // to be changed
-                MainActivity.mclient.setPhoneNumber(phone.getText().toString());
+                mClient.setName(name.getText().toString());
+                mClient.setEmail(email.getText().toString());
+                mClient.setPassword(password.getText().toString());
+                mClient.setPhotoUrl("http://solarviews.com/raw/earth/earthafr.jpg"); // to be changed
+                mClient.setPhoneNumber(phone.getText().toString());
 
                 // Check signup using network call
                 signup();
@@ -146,9 +148,8 @@ public class SignupFragment extends Fragment {
         Log.d(TAG, "signup - Start");
 
         try {
-
             JsonSignUp request = new JsonSignUp();
-            request.setUser(MainActivity.mclient);
+            request.setUser(mClient);
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
@@ -159,7 +160,7 @@ public class SignupFragment extends Fragment {
 
             Log.d(TAG, "signup - Json Request"+ gson.toJson(request));
 
-            // Call user login service
+            // Call mClient login service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
 
                     new Response.Listener<JSONObject>() {

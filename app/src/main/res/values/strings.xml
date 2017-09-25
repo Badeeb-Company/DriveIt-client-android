@@ -33,4 +33,12 @@
 
     <string name="action_settings">Settings</string>
 
+    <string name="GPS_disabled_warning_msg">You must enable location access in order to proceed
+        using the app </string>
+    <string name="GPS_disabled_warning_title">GPS is disabled</string>
+    <string name="internet_disabled_warning_msg">You must connect to internet in order to proceed using the app</string>
+    <string name="internet_disabled_warning_title">Not connected to internet</string>
+
+    <string name="ok_btn_dialog">Ok</string>
+
 </resources>

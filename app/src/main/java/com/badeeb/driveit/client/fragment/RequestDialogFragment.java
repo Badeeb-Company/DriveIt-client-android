@@ -134,7 +134,7 @@ public class RequestDialogFragment extends DialogFragment {
         tripEventListener = createValueEventListener();
 
         tripReference = firebaseManager.createChildReference(FirebaseManager.CLIENTS_KEY,
-                String.valueOf(MainActivity.mclient.getId()), FirebaseManager.TRIP_KEY);
+                String.valueOf(((MainActivity) getActivity()).getClient().getId()), FirebaseManager.TRIP_KEY);
 
         tripReference.addValueEventListener(tripEventListener);
 
@@ -219,7 +219,7 @@ public class RequestDialogFragment extends DialogFragment {
         onTripEnded();
     }
 
-    private void onTripEnded(){
+    private void onTripEnded() {
         dismiss();
         removeTripListener();
         requestStatus = RequestStatus.NONE;
@@ -327,7 +327,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mclient.getToken());
+                    headers.put("Authorization", "Token token=" + ((MainActivity)getActivity()).getClient().getToken());
                     return headers;
                 }
             };

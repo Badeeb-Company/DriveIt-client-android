@@ -31,12 +31,20 @@ public class UiUtils {
         v.setAlpha(0.5f);
     }
 
-    public static void hideInputKeyboard(Context context, EditText editText) {
+    public static void hideActivityShownKeyboard(Activity activity){
+        View view = activity.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+    public static void hideEditTextKeyboard(Context context, EditText editText) {
         InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
     }
 
-    public static void showInputKeyboard(Context context, EditText editText) {
+    public static void showEditTextKeyboard(Context context, EditText editText) {
         editText.requestFocus();
         InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
