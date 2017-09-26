@@ -19,9 +19,8 @@
         android:paddingLeft="24dp"
         android:paddingRight="24dp"
         android:background="@drawable/btn_rounded_corner"
-        android:text="Request Truck!"
-        android:textStyle="italic"
+        android:text="Find Delivery"
         android:textAllCaps="false"
-        android:textSize="30sp" />
+        android:textSize="20sp" />
 
 </RelativeLayout>

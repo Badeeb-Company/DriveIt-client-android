@@ -40,5 +40,7 @@
     <string name="internet_disabled_warning_title">Not connected to internet</string>
 
     <string name="ok_btn_dialog">Ok</string>
+    <string name="fetch_location">Finding your current location...</string>
+    <string name="searching_drivers">Searching for nearby driver...</string>
 
 </resources>

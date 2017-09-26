@@ -7,35 +7,72 @@
     android:minHeight="200dp"
     android:minWidth="200dp"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="16dp">
 
-    <!-- Login progress -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyle"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/llLoading"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:visibility="visible"
+        android:orientation="vertical"
+        android:gravity="center">
 
-        />
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:visibility="visible" />
 
-    <TextView
-        android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/tvLoadingMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            android:text="Searching for nearby driver..."
+            android:textColor="@color/colorPrimary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/bCancelRide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cancel"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llConfirmRide"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="40dp"
-        android:text="Searching for nearby driver..."
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@color/colorPrimary"
-        />
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
 
-    <Button
-        android:id="@+id/cancel_ride"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Cancel Ride Request"
-        android:textSize="20sp"
-        android:textStyle="italic" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="15dp"
+            android:text="Your pickup location is"
+            android:textColor="@color/colorPrimary"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tvAddress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:text="5 Abdel qader stree, Alexandria, Egypt"
+            android:textColor="@color/aluminum"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/bConfirmRide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Confirm"/>
+
+    </LinearLayout>
 
 </LinearLayout>

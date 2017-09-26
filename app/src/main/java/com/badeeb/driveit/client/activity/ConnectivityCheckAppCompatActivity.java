@@ -140,7 +140,6 @@ public abstract class ConnectivityCheckAppCompatActivity extends AppCompatActivi
     private final class LocationChangeReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-
             if (intent.getAction().equals(LocationManager.PROVIDERS_CHANGED_ACTION))
                 checkLocationService();
         }

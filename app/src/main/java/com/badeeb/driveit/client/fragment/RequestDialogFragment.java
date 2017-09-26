@@ -1,6 +1,12 @@
 package com.badeeb.driveit.client.fragment;
 
 
+import android.content.Context;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentManager;
@@ -11,7 +17,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -26,10 +34,12 @@ import com.badeeb.driveit.client.R;
 import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.model.JsonCancelTrip;
 import com.badeeb.driveit.client.model.JsonLogin;
+import com.badeeb.driveit.client.model.JsonRequestTrip;
 import com.badeeb.driveit.client.model.Trip;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
 import com.badeeb.driveit.client.shared.FirebaseManager;
+import com.badeeb.driveit.client.shared.UiUtils;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -41,7 +51,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.parceler.Parcels;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -49,7 +62,8 @@ import java.util.Map;
  */
 public class RequestDialogFragment extends DialogFragment {
 
-    private static enum RequestStatus {NONE, PENDING, ACCEPTED, NOT_SERVED}
+    private Location mCurrentLocation;
+    private String mCurrentAddress;
 
     // Logging Purpose
     public static final String TAG = RequestDialogFragment.class.getSimpleName();
@@ -61,15 +75,21 @@ public class RequestDialogFragment extends DialogFragment {
 //    private User client;
     private Trip mtrip;
     private boolean paused;
-    private boolean needsToDismissDialog;
     private RequestStatus requestStatus;
-    private boolean tripAccepted;
     private ProgressBar mProgressBar;
+    private TextView tvLoadingMessage;
+    private TextView tvAddress;
+    private LinearLayout llLoading;
+    private LinearLayout llConfirmRide;
+    private Button bConfirmRide;
+    private Button bCancelRide;
 
     // Firebase database reference
     private FirebaseManager firebaseManager;
     private DatabaseReference tripReference;
     private ValueEventListener tripEventListener;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
 
     public RequestDialogFragment() {
         // Required empty public constructor
@@ -90,55 +110,218 @@ public class RequestDialogFragment extends DialogFragment {
         return view;
     }
 
+    @SuppressWarnings({"MissingPermission"})
     private void init(View view) {
-        Log.d(TAG, "init - Start");
-
-        // Get client object from extra
-//        this.client = Parcels.unwrap(getArguments().getParcelable("client"));
-        this.mtrip = Parcels.unwrap(getArguments().getParcelable("trip"));
-        paused = false;
-        needsToDismissDialog = false;
-        requestStatus = RequestStatus.NONE;
-
+        tvLoadingMessage = (TextView) view.findViewById(R.id.tvLoadingMessage);
+        llLoading = (LinearLayout) view.findViewById(R.id.llLoading);
+        llConfirmRide = (LinearLayout) view.findViewById(R.id.llConfirmRide);
+        tvAddress = (TextView) view.findViewById(R.id.tvAddress);
+        bConfirmRide = (Button) view.findViewById(R.id.bConfirmRide);
         mProgressBar = view.findViewById(R.id.progressBar);
+        bCancelRide = (Button) view.findViewById(R.id.bCancelRide);
 
-        // Initiate firebase realtime - database
-        firebaseManager = new FirebaseManager();
+        paused = false;
+        requestStatus = RequestStatus.FINDING_LOCATION;
 
-        // Setup Listeners
-        setupListeners(view);
-
-        Log.d(TAG, "init - End");
-    }
-
-    public void setupListeners(View view) {
-        Log.d(TAG, "setupListeners - Start");
-
-        final Button cancelRide = (Button) view.findViewById(R.id.cancel_ride);
-        cancelRide.setOnClickListener(new View.OnClickListener() {
+        bCancelRide.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "setupListeners - cancelRide_onClick - Start");
-
-                // Stop firebase database listener
-                removeTripListener();
-
-                // Send cancel request
-                cancelRide();
-
-                Log.d(TAG, "setupListeners - cancelRide_onClick - End");
+                switch (requestStatus){
+                    case FINDING_LOCATION:
+                        locationManager.removeUpdates(locationListener);
+                        dismiss();
+                        break;
+                    case FINDING_DRIVERS:
+                        removeTripListener();
+                        cancelRide();
+                        break;
+                }
             }
         });
 
-        // Create listener on firebase realtime -
-        tripEventListener = createValueEventListener();
+        bConfirmRide.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                tvLoadingMessage.setText(getActivity().getString(R.string.searching_drivers));
+                UiUtils.show(llLoading);
+                UiUtils.hide(llConfirmRide);
+                UiUtils.hide(bCancelRide);
+                requestStatus = RequestStatus.FINDING_DRIVERS;
+                requestTruck();
+            }
+        });
 
+        tvLoadingMessage.setText(getActivity().getString(R.string.fetch_location));
+        locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+        locationListener = createLocationListener();
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+
+        firebaseManager = new FirebaseManager();
+    }
+
+    private void requestTruck() {
+        Log.d(TAG, "requestTruck - Start");
+        try {
+            JsonRequestTrip request = new JsonRequestTrip();
+            request.setLat(mCurrentLocation.getLatitude() + "");
+            request.setLng(mCurrentLocation.getLongitude() + "");
+            request.setDestination(mCurrentAddress);
+
+            // Create Gson object
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.excludeFieldsWithoutExposeAnnotation();
+            final Gson gson = gsonBuilder.create();
+
+            JSONObject jsonObject = new JSONObject(gson.toJson(request));
+
+            Log.d(TAG, "requestTruck - Json Request" + gson.toJson(request));
+
+            // Call request Truck service
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
+
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            // Response Handling
+                            Log.d(TAG, "requestTruck - onResponse - Start");
+                            Log.d(TAG, "requestTruck - onResponse - Json Response: " + response.toString());
+
+                            String responseData = response.toString();
+
+                            JsonRequestTrip jsonResponse = gson.fromJson(responseData, JsonRequestTrip.class);
+
+                            Log.d(TAG, "requestTruck - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
+                            Log.d(TAG, "requestTruck - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                            // check status  code of response
+                            if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
+                                // Move to next screen
+                                mtrip = new Trip();
+                                mtrip.setId(jsonResponse.getTripId());
+                                mtrip.setDestination(mCurrentAddress);
+                                mtrip.setLng(mCurrentLocation.getLongitude());
+                                mtrip.setLat(mCurrentLocation.getLatitude());
+                                mtrip.setClientId(((MainActivity) getActivity()).getClient().getId());
+                                UiUtils.show(bCancelRide);
+                                setupListeners();
+                            } else {
+                                // Invalid login
+                                Toast.makeText(getContext(), getString(R.string.try_error), Toast.LENGTH_LONG).show();
+                            }
+
+                            Log.d(TAG, "requestTruck - onResponse - End");
+                        }
+                    },
+
+                    new Response.ErrorListener() {
+
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            // Network Error Handling
+                            Log.d(TAG, "requestTruck - onErrorResponse: " + error.toString());
+
+                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                                NetworkResponse response = error.networkResponse;
+                                String responseData = new String(response.data);
+
+                                JsonRequestTrip jsonResponse = gson.fromJson(responseData, JsonRequestTrip.class);
+
+                                Log.d(TAG, "requestTruck - Error Status: " + jsonResponse.getJsonMeta().getStatus());
+                                Log.d(TAG, "requestTruck - Error Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                                Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+
+                        }
+                    }
+            ) {
+
+                /**
+                 * Passing some request headers
+                 */
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    HashMap<String, String> headers = new HashMap<String, String>();
+                    headers.put("Content-Type", "application/json; charset=utf-8");
+                    headers.put("Accept", "*");
+                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getClient().getToken());
+
+                    return headers;
+                }
+            };
+
+            // Adding retry policy to request
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(AppPreferences.VOLLEY_TIME_OUT, AppPreferences.VOLLEY_RETRY_COUNTER, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            MyVolley.getInstance(getContext()).addToRequestQueue(jsonObjectRequest);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        Log.d(TAG, "requestTruck - End");
+    }
+
+    private LocationListener createLocationListener() {
+        return new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                locationManager.removeUpdates(this);
+                onLocationFound(location);
+            }
+
+            @Override
+            public void onStatusChanged(String s, int i, Bundle bundle) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String s) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String s) {
+
+            }
+        };
+    }
+
+    private void onLocationFound(Location location){
+        mCurrentLocation = location;
+        mCurrentAddress = getLocationAddress(location);
+        UiUtils.hide(llLoading);
+        UiUtils.show(llConfirmRide);
+        tvAddress.setText(mCurrentAddress);
+        requestStatus = RequestStatus.LOCATION_FOUND;
+    }
+
+    private String getLocationAddress(Location location) {
+        Geocoder geocoder;
+        List<Address> addresses;
+        geocoder = new Geocoder(getContext(), Locale.getDefault());
+        String address = "";
+        try {
+            // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+            addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            if(!addresses.isEmpty()){
+                Address mainAddress = addresses.get(0);
+                for (int i = 0; i < mainAddress.getMaxAddressLineIndex(); i++) {
+                    address += mainAddress.getAddressLine(i) + ", ";
+                }
+                address += mainAddress.getAddressLine(mainAddress.getMaxAddressLineIndex());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return address;
+    }
+
+    public void setupListeners() {
+        tripEventListener = createValueEventListener();
         tripReference = firebaseManager.createChildReference(FirebaseManager.CLIENTS_KEY,
                 String.valueOf(((MainActivity) getActivity()).getClient().getId()), FirebaseManager.TRIP_KEY);
-
         tripReference.addValueEventListener(tripEventListener);
-
-        Log.d(TAG, "setupListeners - End");
     }
 
     private ValueEventListener createValueEventListener() {
@@ -146,7 +329,6 @@ public class RequestDialogFragment extends DialogFragment {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Log.d(TAG, "setupListeners - mdatabase_onDataChange - Start");
-                onTripAccepted();
                 if (dataSnapshot.getValue() != null) {
                     Trip fdbTrip = dataSnapshot.getValue(Trip.class);
                     // Check if trip is accepted or rejected
@@ -156,14 +338,12 @@ public class RequestDialogFragment extends DialogFragment {
 
                         // Move to fragment that will display driver details
                         fdbTrip.setLng(mtrip.getLng());
-                        fdbTrip.setLng(mtrip.getLng());
+                        fdbTrip.setLat(mtrip.getLat());
                         fdbTrip.setDestination(mtrip.getDestination());
                         fdbTrip.setClientId(mtrip.getClientId());
 
                         mtrip = fdbTrip;
-
                         requestStatus = RequestStatus.ACCEPTED;
-
                         if (!paused) {
                             onTripAccepted();
                         }
@@ -192,14 +372,6 @@ public class RequestDialogFragment extends DialogFragment {
     }
 
     private void onTripAccepted() {
-
-        mtrip = new Trip();
-        mtrip.setDriver_address("Driver Address");
-        mtrip.setDriver_id(1);
-        mtrip.setDistance_to_arrive(100);
-        mtrip.setDriver_name("Amr Alghawy");
-        mtrip.setDriver_phone("01286353574");
-
         TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
         Bundle bundle = new Bundle();
         bundle.putParcelable("trip", Parcels.wrap(mtrip));
@@ -212,7 +384,7 @@ public class RequestDialogFragment extends DialogFragment {
         fragmentTransaction.commit();
         dismiss();
         removeTripListener();
-        requestStatus = RequestStatus.NONE;
+        requestStatus = RequestStatus.FINDING_LOCATION;
     }
 
     private void onTripNotServed() {
@@ -222,7 +394,7 @@ public class RequestDialogFragment extends DialogFragment {
     private void onTripEnded() {
         dismiss();
         removeTripListener();
-        requestStatus = RequestStatus.NONE;
+        requestStatus = RequestStatus.FINDING_LOCATION;
     }
 
     @Override
@@ -242,8 +414,10 @@ public class RequestDialogFragment extends DialogFragment {
             case ACCEPTED:
                 onTripAccepted();
                 break;
+            default:
+                getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.dialog_rounded_corner));
         }
-        getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.dialog_rounded_corner));
+
     }
 
     private void cancelRide() {
@@ -347,9 +521,9 @@ public class RequestDialogFragment extends DialogFragment {
     }
 
     private void removeTripListener() {
-        Log.d(TAG, "removeTripListener - Start");
         tripReference.removeEventListener(tripEventListener);
-        Log.d(TAG, "removeTripListener - End");
     }
+
+    private static enum RequestStatus{FINDING_LOCATION, LOCATION_FOUND, FINDING_DRIVERS, ACCEPTED, NOT_SERVED}
 
 }
