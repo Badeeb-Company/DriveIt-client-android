@@ -23,8 +23,8 @@ public class AppPreferences {
     public static final int VOLLEY_RETRY_COUNTER = 2;
 
     // Trip constants
-    public static final String TRIP_ACCEPTED = "beingServed";
-    public static final String TRIP_REJECTED = "notServed";
+    public static final String TRIP_ACCEPTED = "ACCEPTED";
+    public static final String TRIP_NOT_SERVED = "NOT_SERVED";
 
     // Shared Preferences Keys
 

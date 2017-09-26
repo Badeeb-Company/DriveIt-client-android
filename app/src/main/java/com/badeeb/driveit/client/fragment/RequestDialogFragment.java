@@ -56,11 +56,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * A simple {@link DialogFragment} subclass.
  */
 public class RequestDialogFragment extends DialogFragment {
+
+
+    private static final long FETCH_LOCATION_TIMEOUT_1 = 10 * 1000; // last known location = null
+    private static final long FETCH_LOCATION_TIMEOUT_2 = 5 * 1000;  // last known location != null
 
     private Location mCurrentLocation;
     private String mCurrentAddress;
@@ -79,10 +85,12 @@ public class RequestDialogFragment extends DialogFragment {
     private ProgressBar mProgressBar;
     private TextView tvLoadingMessage;
     private TextView tvAddress;
+    private TextView tvYourLocation;
     private LinearLayout llLoading;
     private LinearLayout llConfirmRide;
     private Button bConfirmRide;
-    private Button bCancelRide;
+    private Button bCancelLoading;
+    private Button bCancelDialog;
 
     // Firebase database reference
     private FirebaseManager firebaseManager;
@@ -90,6 +98,7 @@ public class RequestDialogFragment extends DialogFragment {
     private ValueEventListener tripEventListener;
     private LocationManager locationManager;
     private LocationListener locationListener;
+    private TimerTask fetchLocationTask;
 
     public RequestDialogFragment() {
         // Required empty public constructor
@@ -110,23 +119,23 @@ public class RequestDialogFragment extends DialogFragment {
         return view;
     }
 
-    @SuppressWarnings({"MissingPermission"})
     private void init(View view) {
         tvLoadingMessage = (TextView) view.findViewById(R.id.tvLoadingMessage);
         llLoading = (LinearLayout) view.findViewById(R.id.llLoading);
         llConfirmRide = (LinearLayout) view.findViewById(R.id.llConfirmRide);
         tvAddress = (TextView) view.findViewById(R.id.tvAddress);
+        tvYourLocation = (TextView) view.findViewById(R.id.tvYourLocation);
         bConfirmRide = (Button) view.findViewById(R.id.bConfirmRide);
         mProgressBar = view.findViewById(R.id.progressBar);
-        bCancelRide = (Button) view.findViewById(R.id.bCancelRide);
+        bCancelLoading = (Button) view.findViewById(R.id.bCancelLoading);
+        bCancelDialog = (Button) view.findViewById(R.id.bCancelDialog);
 
         paused = false;
-        requestStatus = RequestStatus.FINDING_LOCATION;
 
-        bCancelRide.setOnClickListener(new View.OnClickListener() {
+        bCancelLoading.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                switch (requestStatus){
+                switch (requestStatus) {
                     case FINDING_LOCATION:
                         locationManager.removeUpdates(locationListener);
                         dismiss();
@@ -142,22 +151,114 @@ public class RequestDialogFragment extends DialogFragment {
         bConfirmRide.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                tvLoadingMessage.setText(getActivity().getString(R.string.searching_drivers));
-                UiUtils.show(llLoading);
-                UiUtils.hide(llConfirmRide);
-                UiUtils.hide(bCancelRide);
-                requestStatus = RequestStatus.FINDING_DRIVERS;
-                requestTruck();
+                if (requestStatus == RequestStatus.LOCATION_FOUND){
+                    tvLoadingMessage.setText(getActivity().getString(R.string.searching_drivers));
+                    UiUtils.show(llLoading);
+                    UiUtils.hide(llConfirmRide);
+                    UiUtils.hide(bCancelLoading);
+                    requestStatus = RequestStatus.FINDING_DRIVERS;
+                    requestTruck();
+                } else if(requestStatus == RequestStatus.LOCATION_NOT_FOUND){
+                    requestStatus = RequestStatus.FINDING_LOCATION;
+                    onFindingLocation();
+                } else if(requestStatus == RequestStatus.NOT_SERVED){
+
+                }
             }
         });
 
-        tvLoadingMessage.setText(getActivity().getString(R.string.fetch_location));
+        bCancelDialog.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dismiss();
+            }
+        });
+
         locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         locationListener = createLocationListener();
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-
         firebaseManager = new FirebaseManager();
+
+        onFindingLocation();
     }
+
+    @SuppressWarnings({"MissingPermission"})
+    private void onFindingLocation() {
+        requestStatus = RequestStatus.FINDING_LOCATION;
+        UiUtils.show(llLoading);
+        UiUtils.hide(llConfirmRide);
+        tvLoadingMessage.setText(getActivity().getString(R.string.fetch_location));
+        mCurrentLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        fetchLocationTask = new TimerTask() {
+            @Override
+            public void run() {
+                locationManager.removeUpdates(locationListener);
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(mCurrentLocation == null){
+                            onLocationNotFound();
+                        } else {
+                            onLocationFound();
+                        }
+                    }
+                });
+            }
+        };
+        Timer timer = new Timer();
+        // timeout of fetching location is bigger when there was no last known location found
+        long taskTimeout = mCurrentLocation == null ? FETCH_LOCATION_TIMEOUT_1 : FETCH_LOCATION_TIMEOUT_2;
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        timer.schedule(fetchLocationTask, taskTimeout);
+    }
+
+    private void onLocationFound() {
+        requestStatus = RequestStatus.LOCATION_FOUND;
+        mCurrentAddress = getLocationAddress();
+        UiUtils.hide(llLoading);
+        UiUtils.show(llConfirmRide);
+        UiUtils.show(tvAddress);
+        tvYourLocation.setText("Your pickup location is");
+        tvAddress.setText(mCurrentAddress);
+    }
+
+    private void onLocationNotFound() {
+        requestStatus = RequestStatus.LOCATION_NOT_FOUND;
+        UiUtils.hide(llLoading);
+        UiUtils.show(llConfirmRide);
+        UiUtils.hide(tvAddress);
+        tvYourLocation.setText("Cannot find your current location");
+        bConfirmRide.setText("Try again");
+    }
+
+    private LocationListener createLocationListener() {
+        return new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                if (fetchLocationTask != null) {
+                    fetchLocationTask.cancel();
+                }
+                locationManager.removeUpdates(this);
+                mCurrentLocation = location;
+                onLocationFound();
+            }
+
+            @Override
+            public void onStatusChanged(String s, int i, Bundle bundle) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String s) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String s) {
+
+            }
+        };
+    }
+
 
     private void requestTruck() {
         Log.d(TAG, "requestTruck - Start");
@@ -202,7 +303,7 @@ public class RequestDialogFragment extends DialogFragment {
                                 mtrip.setLng(mCurrentLocation.getLongitude());
                                 mtrip.setLat(mCurrentLocation.getLatitude());
                                 mtrip.setClientId(((MainActivity) getActivity()).getClient().getId());
-                                UiUtils.show(bCancelRide);
+                                UiUtils.show(bCancelLoading);
                                 setupListeners();
                             } else {
                                 // Invalid login
@@ -262,49 +363,15 @@ public class RequestDialogFragment extends DialogFragment {
         Log.d(TAG, "requestTruck - End");
     }
 
-    private LocationListener createLocationListener() {
-        return new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                locationManager.removeUpdates(this);
-                onLocationFound(location);
-            }
-
-            @Override
-            public void onStatusChanged(String s, int i, Bundle bundle) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String s) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String s) {
-
-            }
-        };
-    }
-
-    private void onLocationFound(Location location){
-        mCurrentLocation = location;
-        mCurrentAddress = getLocationAddress(location);
-        UiUtils.hide(llLoading);
-        UiUtils.show(llConfirmRide);
-        tvAddress.setText(mCurrentAddress);
-        requestStatus = RequestStatus.LOCATION_FOUND;
-    }
-
-    private String getLocationAddress(Location location) {
+    private String getLocationAddress() {
         Geocoder geocoder;
         List<Address> addresses;
         geocoder = new Geocoder(getContext(), Locale.getDefault());
         String address = "";
         try {
             // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-            addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-            if(!addresses.isEmpty()){
+            addresses = geocoder.getFromLocation(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), 1);
+            if (!addresses.isEmpty()) {
                 Address mainAddress = addresses.get(0);
                 for (int i = 0; i < mainAddress.getMaxAddressLineIndex(); i++) {
                     address += mainAddress.getAddressLine(i) + ", ";
@@ -347,7 +414,7 @@ public class RequestDialogFragment extends DialogFragment {
                         if (!paused) {
                             onTripAccepted();
                         }
-                    } else if (fdbTrip.getState().equals(AppPreferences.TRIP_REJECTED)) {
+                    } else if (fdbTrip.getState().equals(AppPreferences.TRIP_NOT_SERVED)) {
                         // Trip rejected
                         Toast.makeText(getContext(), R.string.request_again, Toast.LENGTH_LONG).show();
                         requestStatus = RequestStatus.NOT_SERVED;
@@ -501,7 +568,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + ((MainActivity)getActivity()).getClient().getToken());
+                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getClient().getToken());
                     return headers;
                 }
             };
@@ -524,6 +591,6 @@ public class RequestDialogFragment extends DialogFragment {
         tripReference.removeEventListener(tripEventListener);
     }
 
-    private static enum RequestStatus{FINDING_LOCATION, LOCATION_FOUND, FINDING_DRIVERS, ACCEPTED, NOT_SERVED}
+    private static enum RequestStatus {FINDING_LOCATION, LOCATION_FOUND, LOCATION_NOT_FOUND, FINDING_DRIVERS, ACCEPTED, NOT_SERVED}
 
 }

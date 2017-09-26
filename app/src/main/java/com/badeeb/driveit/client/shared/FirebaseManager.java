@@ -16,7 +16,7 @@ public class FirebaseManager {
 
     public FirebaseManager(){
         if(mDatabase == null){
-            mDatabase = FirebaseDatabase.getInstance().getReference();
+            mDatabase = FirebaseDatabase.getInstance().getReference("staging");
         }
     }
 
