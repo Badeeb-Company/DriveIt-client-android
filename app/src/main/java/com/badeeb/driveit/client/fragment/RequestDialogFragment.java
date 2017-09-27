@@ -5,9 +5,9 @@ import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -40,6 +40,11 @@ import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
 import com.badeeb.driveit.client.shared.FirebaseManager;
 import com.badeeb.driveit.client.shared.UiUtils;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -65,8 +70,7 @@ import java.util.TimerTask;
 public class RequestDialogFragment extends DialogFragment {
 
 
-    private static final long FETCH_LOCATION_TIMEOUT_1 = 10 * 1000; // last known location = null
-    private static final long FETCH_LOCATION_TIMEOUT_2 = 5 * 1000;  // last known location != null
+    private static final long FETCH_LOCATION_TIMEOUT = 10 * 1000; // last known location = null
 
     private Location mCurrentLocation;
     private String mCurrentAddress;
@@ -96,9 +100,14 @@ public class RequestDialogFragment extends DialogFragment {
     private FirebaseManager firebaseManager;
     private DatabaseReference tripReference;
     private ValueEventListener tripEventListener;
-    private LocationManager locationManager;
-    private LocationListener locationListener;
     private TimerTask fetchLocationTask;
+
+    private GoogleApiClient mGoogleApiClient;
+    private LocationListener locationListener;
+
+    private static final int LOCATION_UPDATE_INTERVAL = 0;
+    protected static final float LOCATION_UPDATE_DISTANCE = 25f;
+
 
     public RequestDialogFragment() {
         // Required empty public constructor
@@ -114,6 +123,8 @@ public class RequestDialogFragment extends DialogFragment {
         View view = inflater.inflate(R.layout.fragment_request_dialog, container, false);
 
         init(view);
+
+        LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
 
         Log.d(TAG, "onCreateView - End");
         return view;
@@ -137,7 +148,8 @@ public class RequestDialogFragment extends DialogFragment {
             public void onClick(View view) {
                 switch (requestStatus) {
                     case FINDING_LOCATION:
-                        locationManager.removeUpdates(locationListener);
+                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, locationListener);
+                        // TODO remove listener
                         dismiss();
                         break;
                     case FINDING_DRIVERS:
@@ -151,18 +163,12 @@ public class RequestDialogFragment extends DialogFragment {
         bConfirmRide.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (requestStatus == RequestStatus.LOCATION_FOUND){
-                    tvLoadingMessage.setText(getActivity().getString(R.string.searching_drivers));
-                    UiUtils.show(llLoading);
-                    UiUtils.hide(llConfirmRide);
-                    UiUtils.hide(bCancelLoading);
-                    requestStatus = RequestStatus.FINDING_DRIVERS;
-                    requestTruck();
-                } else if(requestStatus == RequestStatus.LOCATION_NOT_FOUND){
-                    requestStatus = RequestStatus.FINDING_LOCATION;
+                if (requestStatus == RequestStatus.LOCATION_FOUND) {
+                    onFindingDrivers();
+                } else if (requestStatus == RequestStatus.LOCATION_NOT_FOUND) {
                     onFindingLocation();
-                } else if(requestStatus == RequestStatus.NOT_SERVED){
-
+                } else if (requestStatus == RequestStatus.NOT_SERVED) {
+                    onFindingLocation();
                 }
             }
         });
@@ -174,11 +180,97 @@ public class RequestDialogFragment extends DialogFragment {
             }
         });
 
-        locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
-        locationListener = createLocationListener();
         firebaseManager = new FirebaseManager();
+        locationListener = createLocationListener();
+        initGoogleApiClient();
 
         onFindingLocation();
+    }
+
+    private LocationListener createLocationListener() {
+        return new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                mCurrentLocation = location;
+                onLocationFound();
+            }
+        };
+    }
+
+    protected void initGoogleApiClient() {
+
+        mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(Bundle bundle) {
+                        fetchUserCurrentLocation();
+                    }
+
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                        Toast.makeText(getActivity(), "API client connection suspended", Toast.LENGTH_LONG).show();
+                    }
+
+                }).addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+                        Toast.makeText(getActivity(), "API client connection failed", Toast.LENGTH_LONG).show();
+                    }
+                })
+                .build();
+    }
+
+    /*
+        We try to get the last known location if found then no problem, if not found then we
+        will set current location to default location(Australia) and register location update
+        to get the current location whenever received.
+     */
+    @SuppressWarnings({"MissingPermission"})
+    private void fetchUserCurrentLocation() {
+        mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if (mCurrentLocation != null) {
+            onLocationFound();
+        } else {
+            fetchLocationTask = new TimerTask() {
+                @Override
+                public void run() {
+                    LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, locationListener);
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mCurrentLocation == null) {
+                                onLocationNotFound();
+                            } else {
+                                onLocationFound();
+                            }
+                        }
+                    });
+                }
+            };
+            registerLocationUpdate();
+            Timer timer = new Timer();
+//            timer.schedule(fetchLocationTask, FETCH_LOCATION_TIMEOUT);
+        }
+    }
+
+    @SuppressWarnings({"MissingPermission"})
+    protected void registerLocationUpdate() {
+        LocationRequest request = LocationRequest.create();
+        request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        request.setSmallestDisplacement(LOCATION_UPDATE_DISTANCE);
+        request.setInterval(LOCATION_UPDATE_INTERVAL);
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, request, locationListener);
+    }
+
+    private void onFindingDrivers() {
+        requestStatus = RequestStatus.FINDING_DRIVERS;
+        UiUtils.show(llLoading);
+        UiUtils.hide(llConfirmRide);
+        UiUtils.hide(bCancelLoading);
+        tvLoadingMessage.setText(getActivity().getString(R.string.searching_drivers));
+        requestTruck();
     }
 
     @SuppressWarnings({"MissingPermission"})
@@ -186,29 +278,8 @@ public class RequestDialogFragment extends DialogFragment {
         requestStatus = RequestStatus.FINDING_LOCATION;
         UiUtils.show(llLoading);
         UiUtils.hide(llConfirmRide);
+        mGoogleApiClient.connect();
         tvLoadingMessage.setText(getActivity().getString(R.string.fetch_location));
-        mCurrentLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        fetchLocationTask = new TimerTask() {
-            @Override
-            public void run() {
-                locationManager.removeUpdates(locationListener);
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(mCurrentLocation == null){
-                            onLocationNotFound();
-                        } else {
-                            onLocationFound();
-                        }
-                    }
-                });
-            }
-        };
-        Timer timer = new Timer();
-        // timeout of fetching location is bigger when there was no last known location found
-        long taskTimeout = mCurrentLocation == null ? FETCH_LOCATION_TIMEOUT_1 : FETCH_LOCATION_TIMEOUT_2;
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-        timer.schedule(fetchLocationTask, taskTimeout);
     }
 
     private void onLocationFound() {
@@ -218,6 +289,7 @@ public class RequestDialogFragment extends DialogFragment {
         UiUtils.show(llConfirmRide);
         UiUtils.show(tvAddress);
         tvYourLocation.setText("Your pickup location is");
+        bConfirmRide.setText("Confirm");
         tvAddress.setText(mCurrentAddress);
     }
 
@@ -229,36 +301,6 @@ public class RequestDialogFragment extends DialogFragment {
         tvYourLocation.setText("Cannot find your current location");
         bConfirmRide.setText("Try again");
     }
-
-    private LocationListener createLocationListener() {
-        return new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                if (fetchLocationTask != null) {
-                    fetchLocationTask.cancel();
-                }
-                locationManager.removeUpdates(this);
-                mCurrentLocation = location;
-                onLocationFound();
-            }
-
-            @Override
-            public void onStatusChanged(String s, int i, Bundle bundle) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String s) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String s) {
-
-            }
-        };
-    }
-
 
     private void requestTruck() {
         Log.d(TAG, "requestTruck - Start");
@@ -398,70 +440,53 @@ public class RequestDialogFragment extends DialogFragment {
                 Log.d(TAG, "setupListeners - mdatabase_onDataChange - Start");
                 if (dataSnapshot.getValue() != null) {
                     Trip fdbTrip = dataSnapshot.getValue(Trip.class);
-                    // Check if trip is accepted or rejected
                     if (fdbTrip.getState().equals(AppPreferences.TRIP_ACCEPTED)) {
-                        // Trip accepted
-                        Toast.makeText(getContext(), R.string.driver_found, Toast.LENGTH_SHORT).show();
-
-                        // Move to fragment that will display driver details
                         fdbTrip.setLng(mtrip.getLng());
                         fdbTrip.setLat(mtrip.getLat());
                         fdbTrip.setDestination(mtrip.getDestination());
                         fdbTrip.setClientId(mtrip.getClientId());
-
                         mtrip = fdbTrip;
-                        requestStatus = RequestStatus.ACCEPTED;
-                        if (!paused) {
-                            onTripAccepted();
-                        }
+                        onTripAccepted();
                     } else if (fdbTrip.getState().equals(AppPreferences.TRIP_NOT_SERVED)) {
-                        // Trip rejected
-                        Toast.makeText(getContext(), R.string.request_again, Toast.LENGTH_LONG).show();
-                        requestStatus = RequestStatus.NOT_SERVED;
-                        if (!paused) {
-                            onTripNotServed();
-                        }
+                        onTripNotServed();
                     }
-                    // Remove firebase database listener
                 }
-
-                Log.d(TAG, "setupListeners - mdatabase_onDataChange - End");
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                Log.d(TAG, "setupListeners - mdatabase_onCancelled - Start");
-
-
-                Log.d(TAG, "setupListeners - mdatabase_onCancelled - End");
+                Log.d(TAG, "onCancelled: " + databaseError.getMessage());
             }
         };
     }
 
     private void onTripAccepted() {
-        TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("trip", Parcels.wrap(mtrip));
-        tripDetailsFragment.setArguments(bundle);
+        requestStatus = RequestStatus.ACCEPTED;
+        if (!paused) {
+            removeTripListener();
 
-        FragmentManager fragmentManager = getFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
+            Bundle bundle = new Bundle();
+            bundle.putParcelable("trip", Parcels.wrap(mtrip));
+            tripDetailsFragment.setArguments(bundle);
 
-        fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
-        fragmentTransaction.commit();
-        dismiss();
-        removeTripListener();
-        requestStatus = RequestStatus.FINDING_LOCATION;
+            FragmentManager fragmentManager = getFragmentManager();
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+            fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
+            fragmentTransaction.commit();
+
+            dismiss();
+        }
     }
 
     private void onTripNotServed() {
-        onTripEnded();
-    }
-
-    private void onTripEnded() {
-        dismiss();
+        requestStatus = RequestStatus.NOT_SERVED;
         removeTripListener();
-        requestStatus = RequestStatus.FINDING_LOCATION;
+        UiUtils.hide(llLoading);
+        UiUtils.show(llConfirmRide);
+        UiUtils.hide(tvAddress);
+        tvYourLocation.setText("Cannot find nearby drivers");
+        bConfirmRide.setText("Try again");
     }
 
     @Override
@@ -474,17 +499,11 @@ public class RequestDialogFragment extends DialogFragment {
     public void onResume() {
         super.onResume();
         paused = false;
-        switch (requestStatus) {
-            case NOT_SERVED:
-                onTripNotServed();
-                break;
-            case ACCEPTED:
-                onTripAccepted();
-                break;
-            default:
-                getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.dialog_rounded_corner));
+        if (requestStatus == RequestStatus.ACCEPTED) {
+            onTripAccepted();
+        } else {
+            getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.dialog_rounded_corner));
         }
-
     }
 
     private void cancelRide() {
