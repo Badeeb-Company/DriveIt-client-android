@@ -100,7 +100,7 @@ public class RequestDialogFragment extends DialogFragment {
     private FirebaseManager firebaseManager;
     private DatabaseReference tripReference;
     private ValueEventListener tripEventListener;
-    private TimerTask fetchLocationTask;
+    private TimerTask cancelFetchLocationTask;
 
     private GoogleApiClient mGoogleApiClient;
     private LocationListener locationListener;
@@ -149,11 +149,12 @@ public class RequestDialogFragment extends DialogFragment {
                 switch (requestStatus) {
                     case FINDING_LOCATION:
                         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, locationListener);
-                        // TODO remove listener
+                        disconnectGoogleApiClient();
                         dismiss();
                         break;
                     case FINDING_DRIVERS:
                         removeTripListener();
+                        disconnectGoogleApiClient();
                         cancelRide();
                         break;
                 }
@@ -176,6 +177,7 @@ public class RequestDialogFragment extends DialogFragment {
         bCancelDialog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                disconnectGoogleApiClient();
                 dismiss();
             }
         });
@@ -191,6 +193,9 @@ public class RequestDialogFragment extends DialogFragment {
         return new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
+                if(cancelFetchLocationTask != null){
+                    cancelFetchLocationTask.cancel();
+                }
                 LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
                 mCurrentLocation = location;
                 onLocationFound();
@@ -199,7 +204,6 @@ public class RequestDialogFragment extends DialogFragment {
     }
 
     protected void initGoogleApiClient() {
-
         mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                 .addApi(LocationServices.API)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
@@ -207,7 +211,6 @@ public class RequestDialogFragment extends DialogFragment {
                     public void onConnected(Bundle bundle) {
                         fetchUserCurrentLocation();
                     }
-
                     @Override
                     public void onConnectionSuspended(int i) {
                         Toast.makeText(getActivity(), "API client connection suspended", Toast.LENGTH_LONG).show();
@@ -229,38 +232,34 @@ public class RequestDialogFragment extends DialogFragment {
      */
     @SuppressWarnings({"MissingPermission"})
     private void fetchUserCurrentLocation() {
-        mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (mCurrentLocation != null) {
-            onLocationFound();
-        } else {
-            fetchLocationTask = new TimerTask() {
-                @Override
-                public void run() {
-                    LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, locationListener);
-                    getActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mCurrentLocation == null) {
-                                onLocationNotFound();
-                            } else {
-                                onLocationFound();
-                            }
+        cancelFetchLocationTask = new TimerTask() {
+            @Override
+            public void run() {
+                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, locationListener);
+                mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mCurrentLocation == null) {
+                            onLocationNotFound();
+                        } else {
+                            onLocationFound();
                         }
-                    });
-                }
-            };
-            registerLocationUpdate();
-            Timer timer = new Timer();
-//            timer.schedule(fetchLocationTask, FETCH_LOCATION_TIMEOUT);
-        }
+                    }
+                });
+            }
+        };
+        registerLocationUpdate();
+        Timer timer = new Timer();
+        timer.schedule(cancelFetchLocationTask, FETCH_LOCATION_TIMEOUT);
     }
 
     @SuppressWarnings({"MissingPermission"})
     protected void registerLocationUpdate() {
         LocationRequest request = LocationRequest.create();
         request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        request.setSmallestDisplacement(LOCATION_UPDATE_DISTANCE);
-        request.setInterval(LOCATION_UPDATE_INTERVAL);
+        request.setSmallestDisplacement(0);
+        request.setInterval(5000);
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, request, locationListener);
     }
 
@@ -278,6 +277,7 @@ public class RequestDialogFragment extends DialogFragment {
         requestStatus = RequestStatus.FINDING_LOCATION;
         UiUtils.show(llLoading);
         UiUtils.hide(llConfirmRide);
+        disconnectGoogleApiClient();
         mGoogleApiClient.connect();
         tvLoadingMessage.setText(getActivity().getString(R.string.fetch_location));
     }
@@ -295,11 +295,18 @@ public class RequestDialogFragment extends DialogFragment {
 
     private void onLocationNotFound() {
         requestStatus = RequestStatus.LOCATION_NOT_FOUND;
+        disconnectGoogleApiClient();
         UiUtils.hide(llLoading);
         UiUtils.show(llConfirmRide);
         UiUtils.hide(tvAddress);
         tvYourLocation.setText("Cannot find your current location");
         bConfirmRide.setText("Try again");
+    }
+
+    private void disconnectGoogleApiClient(){
+        if(mGoogleApiClient != null && mGoogleApiClient.isConnected()){
+            mGoogleApiClient.disconnect();
+        }
     }
 
     private void requestTruck() {
@@ -462,9 +469,9 @@ public class RequestDialogFragment extends DialogFragment {
 
     private void onTripAccepted() {
         requestStatus = RequestStatus.ACCEPTED;
+        removeTripListener();
+        disconnectGoogleApiClient();
         if (!paused) {
-            removeTripListener();
-
             TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
             Bundle bundle = new Bundle();
             bundle.putParcelable("trip", Parcels.wrap(mtrip));
@@ -482,6 +489,7 @@ public class RequestDialogFragment extends DialogFragment {
     private void onTripNotServed() {
         requestStatus = RequestStatus.NOT_SERVED;
         removeTripListener();
+        disconnectGoogleApiClient();
         UiUtils.hide(llLoading);
         UiUtils.show(llConfirmRide);
         UiUtils.hide(tvAddress);
@@ -610,6 +618,6 @@ public class RequestDialogFragment extends DialogFragment {
         tripReference.removeEventListener(tripEventListener);
     }
 
-    private static enum RequestStatus {FINDING_LOCATION, LOCATION_FOUND, LOCATION_NOT_FOUND, FINDING_DRIVERS, ACCEPTED, NOT_SERVED}
+    private enum RequestStatus {FINDING_LOCATION, LOCATION_FOUND, LOCATION_NOT_FOUND, FINDING_DRIVERS, ACCEPTED, NOT_SERVED}
 
 }
