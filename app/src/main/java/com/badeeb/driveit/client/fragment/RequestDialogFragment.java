@@ -39,6 +39,7 @@ import com.badeeb.driveit.client.model.Trip;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
 import com.badeeb.driveit.client.shared.FirebaseManager;
+import com.badeeb.driveit.client.shared.Settings;
 import com.badeeb.driveit.client.shared.UiUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -104,6 +105,7 @@ public class RequestDialogFragment extends DialogFragment {
 
     private GoogleApiClient mGoogleApiClient;
     private LocationListener locationListener;
+    private Settings settings;
 
     private static final int LOCATION_UPDATE_INTERVAL = 0;
     protected static final float LOCATION_UPDATE_DISTANCE = 25f;
@@ -121,10 +123,7 @@ public class RequestDialogFragment extends DialogFragment {
 
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_request_dialog, container, false);
-
         init(view);
-
-        LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
 
         Log.d(TAG, "onCreateView - End");
         return view;
@@ -184,6 +183,7 @@ public class RequestDialogFragment extends DialogFragment {
 
         firebaseManager = new FirebaseManager();
         locationListener = createLocationListener();
+        settings = Settings.getInstance();
         initGoogleApiClient();
 
         onFindingLocation();
@@ -203,7 +203,7 @@ public class RequestDialogFragment extends DialogFragment {
         };
     }
 
-    protected void initGoogleApiClient() {
+    private void initGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
                 .addApi(LocationServices.API)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
