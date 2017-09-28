@@ -26,6 +26,9 @@ public class AppPreferences {
     public static final String TRIP_ACCEPTED = "ACCEPTED";
     public static final String TRIP_NOT_SERVED = "NOT_SERVED";
 
+    // Splash Screen timeout
+    public static final int SPLASH_TIME_OUT = 3000;
+
     // Shared Preferences Keys
 
     public static SharedPreferences getAppPreferences(Context context) {
