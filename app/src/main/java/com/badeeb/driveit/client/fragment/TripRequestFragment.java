@@ -89,6 +89,8 @@ public class TripRequestFragment extends Fragment implements LocationListener {
         onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
         locationChangeReceiver = new LocationChangeReceiver();
 
+        ((MainActivity) getActivity()).getClient().getId();
+
         // Setup Listeners
         setupListeners(view);
 
