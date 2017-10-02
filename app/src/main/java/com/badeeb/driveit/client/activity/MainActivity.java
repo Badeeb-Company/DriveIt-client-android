@@ -11,6 +11,8 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -30,8 +32,10 @@ import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
 import com.badeeb.driveit.client.shared.Settings;
+import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.makeramen.roundedimageview.RoundedImageView;
 
 import org.json.JSONObject;
 
@@ -124,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Load Login Fragment
         if(msettings.isLoggedIn()){
             mclient = msettings.getUser();
+            setNavigationViewValues(mclient);
             TripRequestFragment tripRequestFragment = new TripRequestFragment();
             FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
             fragmentTransaction.add(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
@@ -151,6 +156,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void enbleNavigationView() {
         mdrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
         mtoggle.setDrawerIndicatorEnabled(true);
+    }
+
+    public void setNavigationViewValues(User client){
+        View view = mnavigationView.getHeaderView(0);
+        RoundedImageView profilePhoto = (RoundedImageView) view.findViewById(R.id.rivProfilePhoto);
+        TextView tvProfileName = (TextView) view.findViewById(R.id.tv_profile_name);
+        TextView tvProfileEmail = (TextView) view.findViewById(R.id.tv_profile_email);
+        tvProfileName.setText(client.getName());
+        tvProfileEmail.setText(client.getEmail());
+        Glide.with(this)
+                .load(client.getPhotoUrl())
+                .into(profilePhoto);
     }
 
     public void setClient(User client){

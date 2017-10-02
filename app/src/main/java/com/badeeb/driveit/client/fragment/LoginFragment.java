@@ -60,6 +60,7 @@ public class LoginFragment extends Fragment {
     private Toolbar mToolbar;
     private ProgressDialog progressDialog;
     private User mclient;
+    private MainActivity mactivity;
 
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/client/login";
@@ -98,12 +99,13 @@ public class LoginFragment extends Fragment {
 
         // Attributes Initialization
         mclient = new User();
+        mactivity = (MainActivity) getActivity();
         // Email
         this.mEmailView = (AutoCompleteTextView) view.findViewById(R.id.email);
         // Password
         this.mPasswordView = (EditText) view.findViewById(R.id.password);
         // Progress bar
-		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
+		progressDialog = UiUtils.createProgressDialog(getActivity());
 
         // Setup listeners
         setupListeners(view);
@@ -217,6 +219,8 @@ public class LoginFragment extends Fragment {
                                 Settings settings = Settings.getInstance();
                                 settings.saveUser(responseClient);
 
+                                mactivity.setNavigationViewValues(responseClient);
+
                                 FragmentManager fragmentManager = getFragmentManager();
                                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                                 fragmentTransaction.add(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
@@ -242,6 +246,11 @@ public class LoginFragment extends Fragment {
                         public void onErrorResponse(VolleyError error) {
                             // Network Error Handling
                             Log.d(TAG, "login - onErrorResponse: " + error.toString());
+                            if (error instanceof AuthFailureError && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme,
+                                        R.string.login_error, R.string.ok_btn_dialog, null);
+                            }
 
                             if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;

@@ -1,11 +1,18 @@
 package com.badeeb.driveit.client.fragment;
 
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,16 +35,34 @@ import com.badeeb.driveit.client.model.JsonSignUp;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
+import com.badeeb.driveit.client.shared.OnPermissionsGrantedHandler;
+import com.badeeb.driveit.client.shared.PermissionsChecker;
 import com.badeeb.driveit.client.shared.UiUtils;
+import com.badeeb.driveit.client.shared.Utils;
+import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.makeramen.roundedimageview.RoundedImageView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
+import static com.badeeb.driveit.client.shared.Utils.getBytes;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -46,18 +71,29 @@ public class SignupFragment extends Fragment {
 
     // Logging Purpose
     public static final String TAG = SignupFragment.class.getSimpleName();
+    private static final int PERM_LOCATION_RQST_CODE = 200;
+    private static final int IMAGE_GALLERY_REQUEST = 10;
 
     // Class Attributes
 
+    private FirebaseStorage storage = FirebaseStorage.getInstance();
     private ProgressDialog progressDialog;
+    private Button bSelectPhoto;
+    private RoundedImageView rivProfilePhoto;
+    private EditText name;
+    private EditText email;
+    private EditText password;
+    private EditText phone;
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/client";
 
     private User mClient;
+    private MainActivity mactivity;
+    private Uri photoUri;
+    private String uploadedPhotoUrl;
+    private boolean photoChosen;
 
-    //
-    private static final int PERMISSION_READ_STORAGE = 145;
-    private static final int IMAGE_GALLERY_REQUEST = 10;
+    private OnPermissionsGrantedHandler onStoragePermissionGrantedHandler;
 
     public SignupFragment() {
         // Required empty public constructor
@@ -83,7 +119,17 @@ public class SignupFragment extends Fragment {
 
         // Attributes initialization
         mClient = new User();
-		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
+        mactivity = (MainActivity) getActivity();
+        onStoragePermissionGrantedHandler = createOnStoragePermissionGrantedHandler();
+
+        progressDialog = UiUtils.createProgressDialog(getActivity(), "Signing up...");
+        bSelectPhoto = (Button) view.findViewById(R.id.bSelectPhoto);
+        rivProfilePhoto = (RoundedImageView) view.findViewById(R.id.rivProfilePhoto);
+        name = (EditText) view.findViewById(R.id.name);
+        email = (EditText) view.findViewById(R.id.email);
+        password = (EditText) view.findViewById(R.id.password);
+        phone = (EditText) view.findViewById(R.id.phone);
+
 
         // Setup listeners
         setupListeners(view);
@@ -92,6 +138,83 @@ public class SignupFragment extends Fragment {
         ((MainActivity) getActivity()).disbleNavigationView();
 
         Log.d(TAG, "init - End");
+    }
+
+    private void uploadToFirebase() {
+        InputStream inputStream = null;
+        try {
+            inputStream = mactivity.getContentResolver().openInputStream(photoUri);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        byte[] inputData = Utils.getBytes(inputStream);
+
+        StorageReference storageRef = storage.getReference();
+        StorageReference imageReference = storageRef.child("clients/" + UUID.randomUUID());
+        final ProgressDialog uploadPhotoProgressDialog = UiUtils.createProgressDialog(mactivity, "Uploading photo...");
+
+        uploadPhotoProgressDialog.show();
+
+        UploadTask uploadTask = imageReference.putBytes(inputData);
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                Toast.makeText(mactivity, "Cannot upload photo, please choose another one.", Toast.LENGTH_LONG).show();
+                uploadPhotoProgressDialog.dismiss();
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                uploadedPhotoUrl = downloadUrl.toString();
+                uploadPhotoProgressDialog.dismiss();
+                photoChosen = false;
+                callSignup();
+            }
+        });
+    }
+
+    private OnPermissionsGrantedHandler createOnStoragePermissionGrantedHandler() {
+        return new OnPermissionsGrantedHandler() {
+            @Override
+            public void onPermissionsGranted() {
+                openSelectPhotoScreen();
+            }
+        };
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case PERM_LOCATION_RQST_CODE: {
+                if (PermissionsChecker.permissionsGranted(grantResults)) {
+                    onStoragePermissionGrantedHandler.onPermissionsGranted();
+                }
+            }
+        }
+    }
+
+    private void openSelectPhotoScreen() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Photo"), IMAGE_GALLERY_REQUEST);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == IMAGE_GALLERY_REQUEST && resultCode == Activity.RESULT_OK) {
+            if (data == null) {
+                Toast.makeText(mactivity, "Cannot select this photo, please choose another one", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            photoChosen = true;
+            photoUri = data.getData();
+            Glide.with(mactivity)
+                    .load(photoUri)
+                    .into(rivProfilePhoto);
+        }
     }
 
     private void setupListeners(final View view) {
@@ -103,50 +226,99 @@ public class SignupFragment extends Fragment {
         signUpBttn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View cview) {
-                Log.d(TAG, "setupListeners - signUpBttn_onClick - Start");
+                if (! validateInput()) {
+                    return;
+                }
 
-                // Enable Progress bar
-                progressDialog.show();
+                if (photoUri == null) {
+                    Toast.makeText(mactivity, "Please select profile photo to continue", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                EditText name = (EditText) view.findViewById(R.id.name);
-                EditText email = (EditText) view.findViewById(R.id.email);
-                EditText password = (EditText) view.findViewById(R.id.password);
-                EditText phone = (EditText) view.findViewById(R.id.phone);
-                RoundedImageView profileImage = (RoundedImageView) view.findViewById(R.id.profile_image);
+                if (photoChosen) {
+                    if(Utils.isAllowedFileSize(mactivity, photoUri)) {
+                        uploadToFirebase();
+                    }
+                } else {
+                    callSignup();
+                }
 
-                mClient.setName(name.getText().toString());
-                mClient.setEmail(email.getText().toString());
-                mClient.setPassword(password.getText().toString());
-                mClient.setPhotoUrl("http://solarviews.com/raw/earth/earthafr.jpg"); // to be changed
-                mClient.setPhoneNumber(phone.getText().toString());
-
-                // Check signup using network call
-                signup();
-
-                Log.d(TAG, "setupListeners - signUpBttn_onClick - End");
             }
         });
 
-        // Profile Image listener
-        RoundedImageView profileImage = (RoundedImageView) view.findViewById(R.id.profile_image);
-
-        profileImage.setOnClickListener(new View.OnClickListener() {
+        bSelectPhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "setupListeners - profileImage_onClick - Start");
-
-//                askForReadStoragePermission();
-
-                Log.d(TAG, "setupListeners - profileImage_onClick - End");
+                PermissionsChecker.checkPermissions(SignupFragment.this, onStoragePermissionGrantedHandler,
+                        PERM_LOCATION_RQST_CODE, Manifest.permission.READ_EXTERNAL_STORAGE);
             }
         });
+
 
         Log.d(TAG, "setupListeners - End");
     }
 
-    private void signup() {
-        Log.d(TAG, "signup - Start");
+    private boolean validateInput() {
 
+        boolean valid = true;
+
+        if (email.getText().toString().isEmpty()) {
+            // Empty Email
+            email.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+        else if (! AppPreferences.isEmailValid(email.getText().toString())) {
+            // Email is wrong
+            email.setError(getString(R.string.error_invalid_email));
+            valid = false;
+        }
+
+        if (password.getText().toString().isEmpty()) {
+            // Empty Password
+            password.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+        else if (! AppPreferences.isPasswordValid(password.getText().toString())) {
+            password.setError(getString(R.string.error_invalid_password));
+            valid = false;
+        }
+
+        if (name.getText().toString().isEmpty()) {
+            // Empty name
+            name.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+
+        if (phone.getText().toString().isEmpty()) {
+            // Empty Phone
+            phone.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+        else if (! AppPreferences.isPhoneNumberValid(phone.getText().toString())) {
+            phone.setError(getString(R.string.error_invalid_phone_number));
+            valid = false;
+        }
+
+        return valid;
+    }
+
+
+    private void goToLogin() {
+        LoginFragment loginFragment = new LoginFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
+        fragmentTransaction.addToBackStack(TAG);
+        fragmentTransaction.commit();
+    }
+
+    private void callSignup() {
+        progressDialog.show();
+        mClient.setName(name.getText().toString());
+        mClient.setEmail(email.getText().toString());
+        mClient.setPassword(password.getText().toString());
+        mClient.setPhotoUrl(uploadedPhotoUrl); // to be changed
+        mClient.setPhoneNumber(phone.getText().toString());
         try {
             JsonSignUp request = new JsonSignUp();
             request.setUser(mClient);
@@ -158,7 +330,7 @@ public class SignupFragment extends Fragment {
 
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
-            Log.d(TAG, "signup - Json Request"+ gson.toJson(request));
+            Log.d(TAG, "callSignup - Json Request" + gson.toJson(request));
 
             // Call mClient login service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
@@ -168,32 +340,23 @@ public class SignupFragment extends Fragment {
                         @Override
                         public void onResponse(JSONObject response) {
                             // Response Handling
-                            Log.d(TAG, "signup - onResponse - Start");
+                            Log.d(TAG, "callSignup - onResponse - Start");
 
-                            Log.d(TAG, "signup - onResponse - Json Response: " + response.toString());
+                            Log.d(TAG, "callSignup - onResponse - Json Response: " + response.toString());
 
                             String responseData = response.toString();
 
                             JsonSignUp jsonResponse = gson.fromJson(responseData, JsonSignUp.class);
 
-                            Log.d(TAG, "signup - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
-                            Log.d(TAG, "signup - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
+                            Log.d(TAG, "callSignup - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
+                            Log.d(TAG, "callSignup - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
 
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
-                                // Success login
-                                // Move to next screen --> Main Activity
-                                LoginFragment loginFragment = new LoginFragment();
-                                FragmentManager fragmentManager = getFragmentManager();
-                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.success_sign_up, R.string.ok_btn_dialog, null);
 
-                                fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
-
-                                fragmentTransaction.addToBackStack(TAG);
-
-                                fragmentTransaction.commit();
-                            }
-                            else {
+                                goToLogin();
+                            } else {
                                 // Invalid Signup
                                 Toast.makeText(getContext(), getString(R.string.signup_error), Toast.LENGTH_LONG).show();
                             }
@@ -201,7 +364,7 @@ public class SignupFragment extends Fragment {
                             // Disable Progress bar
                             progressDialog.dismiss();
 
-                            Log.d(TAG, "signup - onResponse - End");
+                            Log.d(TAG, "callSignup - onResponse - End");
                         }
                     },
 
@@ -210,19 +373,19 @@ public class SignupFragment extends Fragment {
                         @Override
                         public void onErrorResponse(VolleyError error) {
                             // Network Error Handling
-                            Log.d(TAG, "signup - onErrorResponse: " + error.toString());
+                            Log.d(TAG, "callSignup - onErrorResponse: " + error.toString());
 
 
                             if (error instanceof ServerError) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
-                                Log.d(TAG, "signup - Error Data: " + responseData);
+                                Log.d(TAG, "callSignup - Error Data: " + responseData);
 
                                 JsonSignUp jsonResponse = gson.fromJson(responseData, JsonSignUp.class);
 
-                                Log.d(TAG, "signup - Error Status: " + jsonResponse.getJsonMeta().getStatus());
-                                Log.d(TAG, "signup - Error Message: " + jsonResponse.getJsonMeta().getMessage());
+                                Log.d(TAG, "callSignup - Error Status: " + jsonResponse.getJsonMeta().getStatus());
+                                Log.d(TAG, "callSignup - Error Message: " + jsonResponse.getJsonMeta().getMessage());
 
                                 Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
                             }
@@ -253,56 +416,7 @@ public class SignupFragment extends Fragment {
             e.printStackTrace();
         }
 
-        Log.d(TAG, "signup - End");
+        Log.d(TAG, "callSignup - End");
     }
 
-//    private void askForReadStoragePermission() {
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//            if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-//
-//
-//                if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-//                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
-//                    requestPermissions(
-//                            new String[]
-//                                    {Manifest.permission.READ_EXTERNAL_STORAGE}
-//                            , PERMISSION_READ_STORAGE);
-//                } else {
-//
-//
-//                    /** MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE is an app-defined int constant. The callback method gets the result of the request. **/
-//                    ActivityCompat.requestPermissions(getActivity(),
-//                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-//                            PERMISSION_READ_STORAGE);
-//                }
-//            } else {
-//                /** Already has permission */
-//
-//                openSelectPictureScreen();
-//            }
-//        } else {
-//            /** No run time permission needed, version < M*/
-//            openSelectPictureScreen();
-//        }
-//    }
-//
-//    private void openSelectPictureScreen() {
-//        Intent intent = new Intent();
-//        intent.setType("image/*");
-//        intent.setAction(Intent.ACTION_GET_CONTENT);
-//        startActivityForResult(Intent.createChooser(intent, "Select Picture"), IMAGE_GALLERY_REQUEST);
-//    }
-//
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        if (data != null && data.getData() != null && resultCode == RESULT_OK) {
-//
-//            Uri uri = data.getData();
-//            RoundedImageView profileImage = (RoundedImageView) findViewById(R.id.profile_image);
-//            profileImage.setImageURI(uri);
-//
-//            Log.d(TAG, "Image URI: "+uri);
-//        }
-//        super.onActivityResult(requestCode, resultCode, data);
-//    }
 }

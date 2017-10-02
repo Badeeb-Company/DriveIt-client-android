@@ -107,10 +107,6 @@ public class RequestDialogFragment extends DialogFragment {
     private LocationListener locationListener;
     private Settings settings;
 
-    private static final int LOCATION_UPDATE_INTERVAL = 0;
-    protected static final float LOCATION_UPDATE_DISTANCE = 25f;
-
-
     public RequestDialogFragment() {
         // Required empty public constructor
     }
@@ -259,7 +255,7 @@ public class RequestDialogFragment extends DialogFragment {
         LocationRequest request = LocationRequest.create();
         request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         request.setSmallestDisplacement(0);
-        request.setInterval(5000);
+        request.setInterval(0);
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, request, locationListener);
     }
 

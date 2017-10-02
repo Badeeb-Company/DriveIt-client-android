@@ -5,7 +5,9 @@
     android:background="@drawable/dialog_rounded_corner"
     android:minHeight="100dp"
     android:minWidth="200dp"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
 
     <LinearLayout
         android:id="@+id/llLoading"

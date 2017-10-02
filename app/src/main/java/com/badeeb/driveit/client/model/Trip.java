@@ -17,9 +17,6 @@ public class Trip {
     @Expose
     @SerializedName("user_id")
     private int clientId;
-//    @Expose
-//    @SerializedName("driver_id")
-//    private int driverId;
     @Expose
     @SerializedName("trip_state")
     private String state;
@@ -49,6 +46,7 @@ public class Trip {
     private String driver_name;
     private String driver_phone;
     private double time_to_arrive;
+    private String driver_type;
 
     public Trip() {
     }
@@ -69,14 +67,6 @@ public class Trip {
     public void setClientId(int clientId) {
         this.clientId = clientId;
     }
-
-//    public int getDriverId() {
-//        return driverId;
-//    }
-//
-//    public void setDriverId(int driverId) {
-//        this.driverId = driverId;
-//    }
 
     public String getState() {
         return state;
@@ -197,5 +187,13 @@ public class Trip {
 
     public void setTime_to_arrive(double time_to_arrive) {
         this.time_to_arrive = time_to_arrive;
+    }
+
+    public String getDriver_type() {
+        return driver_type;
+    }
+
+    public void setDriver_type(String driver_type) {
+        this.driver_type = driver_type;
     }
 }

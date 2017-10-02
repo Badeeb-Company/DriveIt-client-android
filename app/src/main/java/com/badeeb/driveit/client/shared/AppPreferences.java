@@ -6,6 +6,9 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Created by Amr Alghawy on 6/12/2017.
  */
@@ -19,7 +22,7 @@ public class AppPreferences {
     public static final String BASE_URL = "https://drive-it-badeeb.herokuapp.com/api/v1";
 
     // Volley constants
-    public static final int VOLLEY_TIME_OUT = 2000; // Milliseconds
+    public static final int VOLLEY_TIME_OUT = 8000; // Milliseconds
     public static final int VOLLEY_RETRY_COUNTER = 2;
 
     // Trip constants
@@ -50,5 +53,23 @@ public class AppPreferences {
                 = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    public static boolean isEmailValid(String email) {
+        String expression = "^[\\w\\.-]+@([\\w\\-]+\\.)+[A-Z]{2,4}$";
+        Pattern pattern = Pattern.compile(expression, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(email);
+        return matcher.matches();
+    }
+
+    public static boolean isPasswordValid(String password) {
+        return password.length() >= 6;
+    }
+
+    public static boolean isPhoneNumberValid(String email) {
+        String expression = "^[+]?[0-9]{8,25}$";
+        Pattern pattern = Pattern.compile(expression, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(email);
+        return matcher.matches();
     }
 }

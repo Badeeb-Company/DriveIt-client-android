@@ -9,7 +9,8 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     android:background="@drawable/main_bk"
     android:clickable="true"
-    >
+    android:focusable="true"
+    android:focusableInTouchMode="true">
 
     <Button
         android:id="@+id/request_truck"
