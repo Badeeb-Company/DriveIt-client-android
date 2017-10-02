@@ -2,6 +2,7 @@ package com.badeeb.driveit.client.fragment;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -39,6 +40,7 @@ import com.badeeb.driveit.client.model.Trip;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
 import com.badeeb.driveit.client.shared.FirebaseManager;
+import com.badeeb.driveit.client.shared.NotificationsManager;
 import com.badeeb.driveit.client.shared.Settings;
 import com.badeeb.driveit.client.shared.UiUtils;
 import com.google.android.gms.common.ConnectionResult;
@@ -197,6 +199,13 @@ public class RequestDialogFragment extends DialogFragment {
                 onLocationFound();
             }
         };
+    }
+
+    private void sendNotification() {
+        NotificationsManager notificationsManager = NotificationsManager.getInstance();
+        Intent intent = new Intent(getActivity(), MainActivity.class);
+        notificationsManager.createNotification(getActivity(), "Ride Accepted",
+                "Your driver is on his way", intent, getActivity().getResources());
     }
 
     private void initGoogleApiClient() {
@@ -449,6 +458,7 @@ public class RequestDialogFragment extends DialogFragment {
                         fdbTrip.setDestination(mtrip.getDestination());
                         fdbTrip.setClientId(mtrip.getClientId());
                         mtrip = fdbTrip;
+                        sendNotification();
                         onTripAccepted();
                     } else if (fdbTrip.getState().equals(AppPreferences.TRIP_NOT_SERVED)) {
                         onTripNotServed();
