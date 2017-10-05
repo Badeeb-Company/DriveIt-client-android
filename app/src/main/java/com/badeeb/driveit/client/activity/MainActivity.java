@@ -32,6 +32,7 @@ import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
 import com.badeeb.driveit.client.shared.Settings;
+import com.badeeb.driveit.client.shared.UiUtils;
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -126,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Load Login Fragment inside Main activity
         // Load Login Fragment
-        if(msettings.isLoggedIn()){
+        if (msettings.isLoggedIn()) {
             mclient = msettings.getUser();
             setNavigationViewValues(mclient);
             TripRequestFragment tripRequestFragment = new TripRequestFragment();
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "init - End");
     }
 
-    private void goToLogin(){
+    private void goToLogin() {
         LoginFragment loginFragment = new LoginFragment();
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
@@ -158,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mtoggle.setDrawerIndicatorEnabled(true);
     }
 
-    public void setNavigationViewValues(User client){
+    public void setNavigationViewValues(User client) {
         View view = mnavigationView.getHeaderView(0);
         RoundedImageView profilePhoto = (RoundedImageView) view.findViewById(R.id.rivProfilePhoto);
         TextView tvProfileName = (TextView) view.findViewById(R.id.tv_profile_name);
@@ -170,11 +171,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .into(profilePhoto);
     }
 
-    public void setClient(User client){
+    public void setClient(User client) {
         mclient = client;
     }
 
-    public User getClient(){
+    public User getClient() {
         return mclient;
     }
 
@@ -224,7 +225,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             fragmentTransaction.commit();
 
 
-
                             Log.d(TAG, "logout - onResponse - End");
                         }
                     },
@@ -236,7 +236,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             // Network Error Handling
                             Log.d(TAG, "logout - onErrorResponse: " + error.toString());
 
-                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getApplicationContext(), R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+
+                            } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 

@@ -108,6 +108,9 @@ public class RequestDialogFragment extends DialogFragment {
     private GoogleApiClient mGoogleApiClient;
     private LocationListener locationListener;
     private Settings settings;
+    private MainActivity mactivity;
+    private Context mContext;
+    private FragmentManager mfragmentManager;
 
     public RequestDialogFragment() {
         // Required empty public constructor
@@ -139,6 +142,10 @@ public class RequestDialogFragment extends DialogFragment {
         bCancelDialog = (Button) view.findViewById(R.id.bCancelDialog);
 
         paused = false;
+
+        mactivity = (MainActivity) getActivity();
+        mContext = getContext();
+        mfragmentManager = getFragmentManager();
 
         bCancelLoading.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -375,7 +382,15 @@ public class RequestDialogFragment extends DialogFragment {
                             // Network Error Handling
                             Log.d(TAG, "requestTruck - onErrorResponse: " + error.toString());
 
-                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(mContext, R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+                                settings.clearUserInfo();
+                                settings.clearTripInfo();
+                                goToLogin();
+                                dismiss();
+
+                            } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
@@ -399,7 +414,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getClient().getToken());
+                    headers.put("Authorization", "Token token=" + mactivity.getClient().getToken());
 
                     return headers;
                 }
@@ -577,7 +592,15 @@ public class RequestDialogFragment extends DialogFragment {
                             // Network Error Handling
                             Log.d(TAG, "cancelRide - onErrorResponse: " + error.toString());
 
-                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(mContext, R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+                                settings.clearUserInfo();
+                                settings.clearTripInfo();
+                                goToLogin();
+                                dismiss();
+
+                            } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
@@ -586,7 +609,7 @@ public class RequestDialogFragment extends DialogFragment {
                                 Log.d(TAG, "cancelRide - Error Status: " + jsonResponse.getJsonMeta().getStatus());
                                 Log.d(TAG, "cancelRide - Error Message: " + jsonResponse.getJsonMeta().getMessage());
 
-                                Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(mContext, jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
                             }
 
                         }
@@ -601,7 +624,8 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getClient().getToken());
+                    MainActivity t = ((MainActivity) getActivity());
+                    headers.put("Authorization", "Token token=" + mactivity.getClient().getToken());
                     return headers;
                 }
             };
@@ -618,6 +642,13 @@ public class RequestDialogFragment extends DialogFragment {
         RequestDialogFragment.this.dismiss();
 
         Log.d(TAG, "cancelRide - End");
+    }
+
+    private void goToLogin() {
+        LoginFragment loginFragment = new LoginFragment();
+        FragmentTransaction fragmentTransaction = mfragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.main_frame, loginFragment, loginFragment.TAG);
+        fragmentTransaction.commit();
     }
 
     private void removeTripListener() {

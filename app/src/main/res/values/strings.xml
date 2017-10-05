@@ -45,4 +45,6 @@
     <string name="fetch_location">Finding your current location...</string>
     <string name="searching_drivers">Searching for nearby driver...</string>
 
+    <string name="account_not_active">Account is not active</string>
+
 </resources>

@@ -216,17 +216,23 @@ public class LoginFragment extends Fragment {
 
                                 ((MainActivity)getActivity()).setClient(responseClient);
 
-                                Settings settings = Settings.getInstance();
-                                settings.saveUser(responseClient);
+                                if (responseClient.isActive()) {
+                                    Settings settings = Settings.getInstance();
+                                    settings.saveUser(responseClient);
 
-                                mactivity.setNavigationViewValues(responseClient);
+                                    mactivity.setNavigationViewValues(responseClient);
 
-                                FragmentManager fragmentManager = getFragmentManager();
-                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                                fragmentTransaction.add(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
-                                fragmentTransaction.commit();
+                                    FragmentManager fragmentManager = getFragmentManager();
+                                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                                    fragmentTransaction.add(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
+                                    fragmentTransaction.commit();
 
-                                UiUtils.hideActivityShownKeyboard(getActivity());
+                                    UiUtils.hideActivityShownKeyboard(getActivity());
+                                }
+                                else {
+                                    UiUtils.showDialog(getContext(), R.style.DialogTheme,
+                                            R.string.account_not_active, R.string.ok_btn_dialog, null);
+                                }
                             }
                             else {
                                 // Invalid login
@@ -251,7 +257,6 @@ public class LoginFragment extends Fragment {
                                 UiUtils.showDialog(getContext(), R.style.DialogTheme,
                                         R.string.login_error, R.string.ok_btn_dialog, null);
                             }
-
                             if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
