@@ -2,7 +2,6 @@ package com.badeeb.driveit.client.fragment;
 
 
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -13,7 +12,6 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -34,7 +32,7 @@ import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
-import com.badeeb.driveit.client.shared.Settings;
+import com.badeeb.driveit.client.shared.AppSettings;
 import com.badeeb.driveit.client.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -217,8 +215,8 @@ public class LoginFragment extends Fragment {
                                 ((MainActivity)getActivity()).setClient(responseClient);
 
                                 if (responseClient.isActive()) {
-                                    Settings settings = Settings.getInstance();
-                                    settings.saveUser(responseClient);
+                                    AppSettings appSettings = AppSettings.getInstance();
+                                    appSettings.saveUser(responseClient);
 
                                     mactivity.setNavigationViewValues(responseClient);
 

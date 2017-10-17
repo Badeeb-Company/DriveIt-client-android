@@ -49,6 +49,17 @@ public class User {
     @SerializedName("activated")
     private boolean isActive;
 
+    @Expose
+    @SerializedName("lat")
+    private double locationLat;
+
+    @Expose
+    @SerializedName("long")
+    private double locationLng;
+
+    @Expose
+    @SerializedName("address")
+    private String locationAddr;
 
     // Constructor
     public User() {
@@ -147,5 +158,29 @@ public class User {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public double getLocationLat() {
+        return locationLat;
+    }
+
+    public void setLocationLat(double locationLat) {
+        this.locationLat = locationLat;
+    }
+
+    public double getLocationLng() {
+        return locationLng;
+    }
+
+    public void setLocationLng(double locationLng) {
+        this.locationLng = locationLng;
+    }
+
+    public String getLocationAddr() {
+        return locationAddr;
+    }
+
+    public void setLocationAddr(String locationAddr) {
+        this.locationAddr = locationAddr;
     }
 }

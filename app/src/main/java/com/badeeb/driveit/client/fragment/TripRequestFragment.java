@@ -17,6 +17,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -33,6 +34,7 @@ import com.badeeb.driveit.client.activity.MainActivity;
 import com.badeeb.driveit.client.shared.AppPreferences;
 import com.badeeb.driveit.client.shared.OnPermissionsGrantedHandler;
 import com.badeeb.driveit.client.shared.PermissionsChecker;
+import com.badeeb.driveit.client.shared.UiUtils;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -51,6 +53,7 @@ public class TripRequestFragment extends Fragment implements LocationListener {
     private AlertDialog locationDisabledWarningDialog;
     private OnPermissionsGrantedHandler onLocationPermissionGrantedHandler;
     private LocationChangeReceiver locationChangeReceiver;
+    private MainActivity mActivity;
 
     public TripRequestFragment() {
         // Required empty public constructor
@@ -89,13 +92,15 @@ public class TripRequestFragment extends Fragment implements LocationListener {
         onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
         locationChangeReceiver = new LocationChangeReceiver();
 
-        ((MainActivity) getActivity()).getClient().getId();
+        mActivity = (MainActivity) getActivity();
+
+//        ((MainActivity) getActivity()).getClient().getId();
 
         // Setup Listeners
         setupListeners(view);
 
         // Refresh menu toolbar
-        ((MainActivity) getActivity()).enbleNavigationView();
+        mActivity.enbleNavigationView();
 
         Log.d(TAG, "init - End");
     }
@@ -105,13 +110,17 @@ public class TripRequestFragment extends Fragment implements LocationListener {
             @Override
             public void onPermissionsGranted() {
                 if(checkLocationService()){
-                    RequestDialogFragment requestDialogFragment = new RequestDialogFragment();
-                    requestDialogFragment.setCancelable(false);
-                    FragmentManager fragmentManager = getFragmentManager();
-                    requestDialogFragment.show(fragmentManager, requestDialogFragment.TAG);
+                    goToRequestDialog();
                 }
             }
         };
+    }
+
+    public void goToRequestDialog() {
+        RequestDialogFragment requestDialogFragment = new RequestDialogFragment();
+        requestDialogFragment.setCancelable(false);
+        FragmentManager fragmentManager = getFragmentManager();
+        requestDialogFragment.show(fragmentManager, requestDialogFragment.TAG);
     }
 
     public void setupListeners(View view) {
@@ -120,11 +129,48 @@ public class TripRequestFragment extends Fragment implements LocationListener {
         requestTruck.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                PermissionsChecker.checkPermissions(TripRequestFragment.this, onLocationPermissionGrantedHandler,
-                        PERM_LOCATION_RQST_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
+                if ((mActivity.getClient().getLocationAddr() == null || mActivity.getClient().getLocationAddr().isEmpty())
+                        && mActivity.getClient().getLocationLat() == 0.0
+                        && mActivity.getClient().getLocationLng() == 0.0) {
+                    // Address need to be updated
+                    requestAddressUpdate();
+                }
+                else {
+                    goToRequestDialog();
+                }
+//                PermissionsChecker.checkPermissions(TripRequestFragment.this, onLocationPermissionGrantedHandler,
+//                        PERM_LOCATION_RQST_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
             }
         });
     }
+
+    private void requestAddressUpdate() {
+        DialogInterface.OnClickListener positiveListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                goToUpdateAddress();
+            }
+        };
+
+        DialogInterface.OnClickListener negativeListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        };
+
+        UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.update_address_msg, R.string.update_address_des_msg,
+                R.string.yes_msg, positiveListener, R.string.no_msg, negativeListener);
+    }
+
+    private void goToUpdateAddress() {
+        UpdateAddressFragment updateAddressFragment = new UpdateAddressFragment();
+        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, updateAddressFragment, updateAddressFragment.TAG);
+        fragmentTransaction.addToBackStack(TAG);
+        fragmentTransaction.commit();
+    }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -167,35 +213,6 @@ public class TripRequestFragment extends Fragment implements LocationListener {
         builder.setCancelable(false);
         locationDisabledWarningDialog = builder.create();
         locationDisabledWarningDialog.show();
-    }
-
-    // Current Location Inquiry
-    private void fetchCurrentLocation() {
-        Log.d(TAG, "fetchCurrentLocation - Start");
-
-        // Check if GPS is granted or not
-        if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // Permission is granted now
-            Log.d(TAG, "fetchCurrentLocation - Permission is granted");
-
-            locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
-            boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-
-            if (isGPSEnabled) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-            } else {
-                Log.d(TAG, "fetchCurrentLocation - GPS and Network are not enabled");
-                Toast.makeText(getContext(), getResources().getText(R.string.enable_gps), Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            // Location permission is required
-            Log.d(TAG, "fetchCurrentLocation - Permission is not granted");
-            // Show Alert to enable location service
-            Toast.makeText(getContext(), "Grant location permission to APP", Toast.LENGTH_SHORT).show();
-
-            // TODO: Show dialog to grant permissions and reload data after that
-            ActivityCompat.requestPermissions(getActivity(), new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-        }
     }
 
     // ---------------------------------------------------------------

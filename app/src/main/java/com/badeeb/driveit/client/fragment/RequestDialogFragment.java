@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
@@ -39,9 +38,9 @@ import com.badeeb.driveit.client.model.JsonRequestTrip;
 import com.badeeb.driveit.client.model.Trip;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
+import com.badeeb.driveit.client.shared.AppSettings;
 import com.badeeb.driveit.client.shared.FirebaseManager;
 import com.badeeb.driveit.client.shared.NotificationsManager;
-import com.badeeb.driveit.client.shared.Settings;
 import com.badeeb.driveit.client.shared.UiUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -98,6 +97,7 @@ public class RequestDialogFragment extends DialogFragment {
     private Button bConfirmRide;
     private Button bCancelLoading;
     private Button bCancelDialog;
+    private TextView tvUpdateAddress;
 
     // Firebase database reference
     private FirebaseManager firebaseManager;
@@ -107,7 +107,7 @@ public class RequestDialogFragment extends DialogFragment {
 
     private GoogleApiClient mGoogleApiClient;
     private LocationListener locationListener;
-    private Settings settings;
+    private AppSettings appSettings;
     private MainActivity mactivity;
     private Context mContext;
     private FragmentManager mfragmentManager;
@@ -140,12 +140,17 @@ public class RequestDialogFragment extends DialogFragment {
         mProgressBar = view.findViewById(R.id.progressBar);
         bCancelLoading = (Button) view.findViewById(R.id.bCancelLoading);
         bCancelDialog = (Button) view.findViewById(R.id.bCancelDialog);
+        tvUpdateAddress = (TextView) view.findViewById(R.id.tvUpdateAddress);
 
         paused = false;
 
         mactivity = (MainActivity) getActivity();
         mContext = getContext();
         mfragmentManager = getFragmentManager();
+
+        firebaseManager = new FirebaseManager();
+        locationListener = createLocationListener();
+        appSettings = AppSettings.getInstance();
 
         bCancelLoading.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -170,10 +175,12 @@ public class RequestDialogFragment extends DialogFragment {
             public void onClick(View view) {
                 if (requestStatus == RequestStatus.LOCATION_FOUND) {
                     onFindingDrivers();
-                } else if (requestStatus == RequestStatus.LOCATION_NOT_FOUND) {
-                    onFindingLocation();
-                } else if (requestStatus == RequestStatus.NOT_SERVED) {
-                    onFindingLocation();
+                }
+//                else if (requestStatus == RequestStatus.LOCATION_NOT_FOUND) {
+//                    onFindingLocation();
+//                }
+                else if (requestStatus == RequestStatus.NOT_SERVED) {
+                    onLocationFound();
                 }
             }
         });
@@ -186,12 +193,40 @@ public class RequestDialogFragment extends DialogFragment {
             }
         });
 
-        firebaseManager = new FirebaseManager();
-        locationListener = createLocationListener();
-        settings = Settings.getInstance();
-        initGoogleApiClient();
+        tvUpdateAddress.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                disconnectGoogleApiClient();
+                dismiss();
+                goToUpdateAddress();
+            }
+        });
 
-        onFindingLocation();
+//        initGoogleApiClient();
+//
+//        onFindingLocation();
+
+        mCurrentLocation = new Location("");
+        mCurrentLocation.setLatitude(mactivity.getClient().getLocationLat());
+        mCurrentLocation.setLongitude(mactivity.getClient().getLocationLng());
+        mCurrentAddress = mactivity.getClient().getLocationAddr();
+
+        onLocationFound();
+    }
+
+    private void goToUpdateAddress() {
+        UpdateAddressFragment updateAddressFragment = new UpdateAddressFragment();
+        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, updateAddressFragment, updateAddressFragment.TAG);
+        fragmentTransaction.addToBackStack(TAG);
+        fragmentTransaction.commit();
+    }
+
+    public void setupListeners() {
+        tripEventListener = createValueEventListener();
+        tripReference = firebaseManager.createChildReference(FirebaseManager.CLIENTS_KEY,
+                String.valueOf(((MainActivity) getActivity()).getClient().getId()), FirebaseManager.TRIP_KEY);
+        tripReference.addValueEventListener(tripEventListener);
     }
 
     private LocationListener createLocationListener() {
@@ -280,6 +315,7 @@ public class RequestDialogFragment extends DialogFragment {
         UiUtils.show(llLoading);
         UiUtils.hide(llConfirmRide);
         UiUtils.hide(bCancelLoading);
+        UiUtils.hide(tvUpdateAddress);
         tvLoadingMessage.setText(getActivity().getString(R.string.searching_drivers));
         requestTruck();
     }
@@ -296,7 +332,7 @@ public class RequestDialogFragment extends DialogFragment {
 
     private void onLocationFound() {
         requestStatus = RequestStatus.LOCATION_FOUND;
-        mCurrentAddress = getLocationAddress();
+//        mCurrentAddress = getLocationAddress();
         UiUtils.hide(llLoading);
         UiUtils.show(llConfirmRide);
         UiUtils.show(tvAddress);
@@ -385,8 +421,8 @@ public class RequestDialogFragment extends DialogFragment {
                             if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
                                 UiUtils.showDialog(mContext, R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
-                                settings.clearUserInfo();
-                                settings.clearTripInfo();
+                                appSettings.clearUserInfo();
+                                appSettings.clearTripInfo();
                                 goToLogin();
                                 dismiss();
 
@@ -453,12 +489,6 @@ public class RequestDialogFragment extends DialogFragment {
         return address;
     }
 
-    public void setupListeners() {
-        tripEventListener = createValueEventListener();
-        tripReference = firebaseManager.createChildReference(FirebaseManager.CLIENTS_KEY,
-                String.valueOf(((MainActivity) getActivity()).getClient().getId()), FirebaseManager.TRIP_KEY);
-        tripReference.addValueEventListener(tripEventListener);
-    }
 
     private ValueEventListener createValueEventListener() {
         return new ValueEventListener() {
@@ -510,7 +540,7 @@ public class RequestDialogFragment extends DialogFragment {
     private void onTripNotServed() {
         requestStatus = RequestStatus.NOT_SERVED;
         removeTripListener();
-        disconnectGoogleApiClient();
+//        disconnectGoogleApiClient();
         UiUtils.hide(llLoading);
         UiUtils.show(llConfirmRide);
         UiUtils.hide(tvAddress);
@@ -595,8 +625,8 @@ public class RequestDialogFragment extends DialogFragment {
                             if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
                                 UiUtils.showDialog(mContext, R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
-                                settings.clearUserInfo();
-                                settings.clearTripInfo();
+                                appSettings.clearUserInfo();
+                                appSettings.clearTripInfo();
                                 goToLogin();
                                 dismiss();
 

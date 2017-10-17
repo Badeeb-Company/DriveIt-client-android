@@ -116,6 +116,21 @@ public class UiUtils {
         return dialog;
     }
 
+    public static AlertDialog showDialog(Context context, int style, int title, String message,
+                                         int positiveMessage, DialogInterface.OnClickListener positiveListener,
+                                         int negativeMessage, DialogInterface.OnClickListener negativeListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context, style);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        builder.setPositiveButton(positiveMessage, positiveListener);
+        builder.setNegativeButton(negativeMessage, negativeListener);
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        return dialog;
+    }
+
     /**
      * Dialog with on positive listener title only
      * @param context

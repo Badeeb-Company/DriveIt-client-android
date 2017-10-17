@@ -72,9 +72,19 @@
                 android:id="@+id/tvAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="10dp"
                 android:text="5 Abdel qader stree, Alexandria, Egypt"
                 android:textColor="@color/aluminum"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvUpdateAddress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:text="Update Address?"
+                android:layout_gravity="right"
+                android:textColor="@color/colorAccent"
                 android:textSize="14sp" />
 
         </LinearLayout>

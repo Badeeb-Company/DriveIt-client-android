@@ -2,9 +2,7 @@ package com.badeeb.driveit.client.controllers;
 
 import android.app.Application;
 
-import com.badeeb.driveit.client.shared.Settings;
-import com.crashlytics.android.Crashlytics;
-import io.fabric.sdk.android.Fabric;
+import com.badeeb.driveit.client.shared.AppSettings;
 
 /**
  * Created by meldeeb on 9/25/17.
@@ -16,7 +14,7 @@ public class DriveItApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Fabric.with(this, new Crashlytics());
+//        Fabric.with(this, new Crashlytics());
         sDriverItApplication = this;
     }
 
@@ -28,7 +26,7 @@ public class DriveItApplication extends Application {
     }
 
     public static boolean isLoggedIn() {
-        return Settings.getInstance().isLoggedIn();
+        return AppSettings.getInstance().isLoggedIn();
     }
 
 }

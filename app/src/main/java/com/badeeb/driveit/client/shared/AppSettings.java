@@ -13,7 +13,7 @@ import com.badeeb.driveit.client.model.User;
  * Created by meldeeb on 9/25/17.
  */
 
-public class Settings {
+public class AppSettings {
 
     private final static String PREF_USER_ID = "PREF_USER_ID";
     private final static String PREF_USER_MOBILE_NUMBER = "PREF_PHONE_NUMBER";
@@ -21,6 +21,9 @@ public class Settings {
     private final static String PREF_USER_EMAIL = "PREF_USER_EMAIL";
     private final static String PREF_USER_TOKEN = "PREF_USER_TOKEN";
     private final static String PREF_USER_IMAGE_URL = "PREF_USER_IMAGE_URL";
+    private final static String PREF_USER_LOC_ADDR = "PREF_USER_LOC_ADDR";
+    private final static String PREF_USER_LOC_LAT = "PREF_USER_LOC_LAT";
+    private final static String PREF_USER_LOC_LNG = "PREF_USER_LOC_LNG";
 
     private final static String PREF_TRIP_ID = "PREF_TRIP_ID";
     private final static String PREF_TRIP_DISTANCE_TO_ARRIVE = "PREF_TRIP_DISTANCE_TO_ARRIVE";
@@ -33,19 +36,19 @@ public class Settings {
     private final static String PREF_TRIP_DRIVER_PHONE = "PREF_TRIP_DRIVER_PHONE";
     private final static String PREF_TRIP_TIME_TO_ARRIVE = "PREF_TRIP_TIME_TO_ARRIVE";
 
-    private static Settings sInstance;
+    private static AppSettings sInstance;
 
     private SharedPreferences sPreferences;
 
-    public static Settings getInstance() {
+    public static AppSettings getInstance() {
         if (sInstance == null) {
-            sInstance = new Settings(DriveItApplication.getInstance());
+            sInstance = new AppSettings(DriveItApplication.getInstance());
         }
         return sInstance;
     }
 
 
-    private Settings(Context context) {
+    private AppSettings(Context context) {
         String fileName = context.getString(R.string.app_name);
         this.sPreferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
     }
@@ -82,6 +85,9 @@ public class Settings {
         user.setPhoneNumber(getUserMobileNumber());
         user.setPhotoUrl(getUserImageUrl());
         user.setToken(getUserToken());
+        user.setLocationAddr(getUserLocationAddr());
+        user.setLocationLat(getUserLocationLat());
+        user.setLocationLng(getUserLocationLng());
         return user;
     }
 
@@ -92,6 +98,9 @@ public class Settings {
         setUserEmail(user.getEmail());
         setUserImageUrl(user.getPhotoUrl());
         setUserToken(user.getToken());
+        setUserLocationAddr(user.getLocationAddr());
+        setUserLocationLat(user.getLocationLat());
+        setUserLocationLng(user.getLocationLng());
     }
 
     public void clearUserInfo() {
@@ -101,7 +110,10 @@ public class Settings {
                 .remove(PREF_USER_IMAGE_URL)
                 .remove(PREF_USER_TOKEN)
                 .remove(PREF_USER_NAME)
-                .remove(PREF_USER_MOBILE_NUMBER);
+                .remove(PREF_USER_MOBILE_NUMBER)
+                .remove(PREF_USER_LOC_ADDR)
+                .remove(PREF_USER_LOC_LAT)
+                .remove(PREF_USER_LOC_LNG);
         editor.commit();
     }
 
@@ -284,6 +296,29 @@ public class Settings {
         return getValue(PREF_TRIP_TIME_TO_ARRIVE, 0.0);
     }
 
+    private void setUserLocationLng(double locationLng) {
+        putValue(PREF_USER_LOC_LNG, locationLng);
+    }
+
+    private void setUserLocationLat(double locationLat) {
+        putValue(PREF_USER_LOC_LAT, locationLat);
+    }
+
+    private void setUserLocationAddr(String locationAddr) {
+        putValue(PREF_USER_LOC_ADDR, locationAddr);
+    }
+
+    private double getUserLocationLng() {
+        return getValue(PREF_USER_LOC_LNG, 0.0);
+    }
+
+    private double getUserLocationLat() {
+        return getValue(PREF_USER_LOC_LAT, 0.0);
+    }
+
+    private String getUserLocationAddr() {
+        return getValue(PREF_USER_LOC_ADDR, "");
+    }
 
 }
 

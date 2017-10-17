@@ -42,9 +42,20 @@
     <string name="internet_disabled_warning_title">Not connected to internet</string>
 
     <string name="ok_btn_dialog">Ok</string>
+    <string name="confirm_btn_dialog">Confirm</string>
     <string name="fetch_location">Finding your current location...</string>
     <string name="searching_drivers">Searching for nearby driver...</string>
 
     <string name="account_not_active">Account is not active</string>
+
+    <string name="update_address_msg">Update address</string>
+    <string name="update_address_des_msg">Update your address to use the service</string>
+    <string name="yes_msg">Yes</string>
+    <string name="no_msg">No</string>
+    <string name="location_not_found">Cannot find your current location, Please try later</string>
+    <string name="pickup_location">Your pickup location</string>
+
+    <string name="address_update_dialog_msg">Address is updated successfully</string>
+    <string name="address_update_error_dialog_msg">Address cannot be updated now, please try later</string>
 
 </resources>

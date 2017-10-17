@@ -26,12 +26,13 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.badeeb.driveit.client.R;
 import com.badeeb.driveit.client.fragment.LoginFragment;
 import com.badeeb.driveit.client.fragment.TripRequestFragment;
+import com.badeeb.driveit.client.fragment.UpdateAddressFragment;
 import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.JsonLogout;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
-import com.badeeb.driveit.client.shared.Settings;
+import com.badeeb.driveit.client.shared.AppSettings;
 import com.badeeb.driveit.client.shared.UiUtils;
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
@@ -54,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private DrawerLayout mdrawer;
     private ActionBarDrawerToggle mtoggle;
     private NavigationView mnavigationView;
-    private Settings msettings;
+    private AppSettings msettings;
 
     private User mclient;
 
@@ -95,6 +96,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             msettings.clearUserInfo();
             goToLogin();
         }
+        else if (id == R.id.nav_address) {
+            goToUpdateAddress();
+        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -109,7 +113,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Initialize Attributes
         mFragmentManager = getSupportFragmentManager();
-        msettings = Settings.getInstance();
+        msettings = AppSettings.getInstance();
 
         // Toolbar
         mtoolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -146,6 +150,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         LoginFragment loginFragment = new LoginFragment();
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
+        fragmentTransaction.commit();
+    }
+
+    private void goToUpdateAddress() {
+        UpdateAddressFragment updateAddressFragment = new UpdateAddressFragment();
+        FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, updateAddressFragment, updateAddressFragment.TAG);
+        fragmentTransaction.addToBackStack(updateAddressFragment.TAG);
         fragmentTransaction.commit();
     }
 
