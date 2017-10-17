@@ -103,10 +103,7 @@ public class RequestDialogFragment extends DialogFragment {
     private FirebaseManager firebaseManager;
     private DatabaseReference tripReference;
     private ValueEventListener tripEventListener;
-    private TimerTask cancelFetchLocationTask;
 
-    private GoogleApiClient mGoogleApiClient;
-    private LocationListener locationListener;
     private AppSettings appSettings;
     private MainActivity mactivity;
     private Context mContext;
@@ -149,21 +146,14 @@ public class RequestDialogFragment extends DialogFragment {
         mfragmentManager = getFragmentManager();
 
         firebaseManager = new FirebaseManager();
-        locationListener = createLocationListener();
         appSettings = AppSettings.getInstance();
 
         bCancelLoading.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 switch (requestStatus) {
-                    case FINDING_LOCATION:
-                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, locationListener);
-                        disconnectGoogleApiClient();
-                        dismiss();
-                        break;
                     case FINDING_DRIVERS:
                         removeTripListener();
-                        disconnectGoogleApiClient();
                         cancelRide();
                         break;
                 }
@@ -188,7 +178,6 @@ public class RequestDialogFragment extends DialogFragment {
         bCancelDialog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                disconnectGoogleApiClient();
                 dismiss();
             }
         });
@@ -196,15 +185,10 @@ public class RequestDialogFragment extends DialogFragment {
         tvUpdateAddress.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                disconnectGoogleApiClient();
                 dismiss();
                 goToUpdateAddress();
             }
         });
-
-//        initGoogleApiClient();
-//
-//        onFindingLocation();
 
         mCurrentLocation = new Location("");
         mCurrentLocation.setLatitude(mactivity.getClient().getLocationLat());
@@ -229,85 +213,11 @@ public class RequestDialogFragment extends DialogFragment {
         tripReference.addValueEventListener(tripEventListener);
     }
 
-    private LocationListener createLocationListener() {
-        return new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                if(cancelFetchLocationTask != null){
-                    cancelFetchLocationTask.cancel();
-                }
-                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-                mCurrentLocation = location;
-                onLocationFound();
-            }
-        };
-    }
-
     private void sendNotification() {
         NotificationsManager notificationsManager = NotificationsManager.getInstance();
         Intent intent = new Intent(getActivity(), MainActivity.class);
         notificationsManager.createNotification(getActivity(), "Ride Accepted",
                 "Your driver is on his way", intent, getActivity().getResources());
-    }
-
-    private void initGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(Bundle bundle) {
-                        fetchUserCurrentLocation();
-                    }
-                    @Override
-                    public void onConnectionSuspended(int i) {
-                        Toast.makeText(getActivity(), "API client connection suspended", Toast.LENGTH_LONG).show();
-                    }
-
-                }).addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                    @Override
-                    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-                        Toast.makeText(getActivity(), "API client connection failed", Toast.LENGTH_LONG).show();
-                    }
-                })
-                .build();
-    }
-
-    /*
-        We try to get the last known location if found then no problem, if not found then we
-        will set current location to default location(Australia) and register location update
-        to get the current location whenever received.
-     */
-    @SuppressWarnings({"MissingPermission"})
-    private void fetchUserCurrentLocation() {
-        cancelFetchLocationTask = new TimerTask() {
-            @Override
-            public void run() {
-                LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, locationListener);
-                mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mCurrentLocation == null) {
-                            onLocationNotFound();
-                        } else {
-                            onLocationFound();
-                        }
-                    }
-                });
-            }
-        };
-        registerLocationUpdate();
-        Timer timer = new Timer();
-        timer.schedule(cancelFetchLocationTask, FETCH_LOCATION_TIMEOUT);
-    }
-
-    @SuppressWarnings({"MissingPermission"})
-    protected void registerLocationUpdate() {
-        LocationRequest request = LocationRequest.create();
-        request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        request.setSmallestDisplacement(0);
-        request.setInterval(0);
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, request, locationListener);
     }
 
     private void onFindingDrivers() {
@@ -320,41 +230,14 @@ public class RequestDialogFragment extends DialogFragment {
         requestTruck();
     }
 
-    @SuppressWarnings({"MissingPermission"})
-    private void onFindingLocation() {
-        requestStatus = RequestStatus.FINDING_LOCATION;
-        UiUtils.show(llLoading);
-        UiUtils.hide(llConfirmRide);
-        disconnectGoogleApiClient();
-        mGoogleApiClient.connect();
-        tvLoadingMessage.setText(getActivity().getString(R.string.fetch_location));
-    }
-
     private void onLocationFound() {
         requestStatus = RequestStatus.LOCATION_FOUND;
-//        mCurrentAddress = getLocationAddress();
         UiUtils.hide(llLoading);
         UiUtils.show(llConfirmRide);
         UiUtils.show(tvAddress);
         tvYourLocation.setText("Your pickup location is");
         bConfirmRide.setText("Confirm");
         tvAddress.setText(mCurrentAddress);
-    }
-
-    private void onLocationNotFound() {
-        requestStatus = RequestStatus.LOCATION_NOT_FOUND;
-        disconnectGoogleApiClient();
-        UiUtils.hide(llLoading);
-        UiUtils.show(llConfirmRide);
-        UiUtils.hide(tvAddress);
-        tvYourLocation.setText("Cannot find your current location");
-        bConfirmRide.setText("Try again");
-    }
-
-    private void disconnectGoogleApiClient(){
-        if(mGoogleApiClient != null && mGoogleApiClient.isConnected()){
-            mGoogleApiClient.disconnect();
-        }
     }
 
     private void requestTruck() {
@@ -468,28 +351,6 @@ public class RequestDialogFragment extends DialogFragment {
         Log.d(TAG, "requestTruck - End");
     }
 
-    private String getLocationAddress() {
-        Geocoder geocoder;
-        List<Address> addresses;
-        geocoder = new Geocoder(getContext(), Locale.getDefault());
-        String address = "";
-        try {
-            // Here 1 represent max location result to returned, by documents it recommended 1 to 5
-            addresses = geocoder.getFromLocation(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude(), 1);
-            if (!addresses.isEmpty()) {
-                Address mainAddress = addresses.get(0);
-                for (int i = 0; i < mainAddress.getMaxAddressLineIndex(); i++) {
-                    address += mainAddress.getAddressLine(i) + ", ";
-                }
-                address += mainAddress.getAddressLine(mainAddress.getMaxAddressLineIndex());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return address;
-    }
-
-
     private ValueEventListener createValueEventListener() {
         return new ValueEventListener() {
             @Override
@@ -521,7 +382,6 @@ public class RequestDialogFragment extends DialogFragment {
     private void onTripAccepted() {
         requestStatus = RequestStatus.ACCEPTED;
         removeTripListener();
-        disconnectGoogleApiClient();
         if (!paused) {
             TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
             Bundle bundle = new Bundle();
@@ -540,7 +400,6 @@ public class RequestDialogFragment extends DialogFragment {
     private void onTripNotServed() {
         requestStatus = RequestStatus.NOT_SERVED;
         removeTripListener();
-//        disconnectGoogleApiClient();
         UiUtils.hide(llLoading);
         UiUtils.show(llConfirmRide);
         UiUtils.hide(tvAddress);

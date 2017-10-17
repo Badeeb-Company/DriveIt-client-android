@@ -39,20 +39,12 @@ import com.badeeb.driveit.client.shared.UiUtils;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class TripRequestFragment extends Fragment implements LocationListener {
+public class TripRequestFragment extends Fragment {
 
     // Logging Purpose
     public static final String TAG = TripRequestFragment.class.getSimpleName();
-    private static final int PERM_LOCATION_RQST_CODE = 100;
-
-    // attributes that will be used for JSON calls
-    private String url = AppPreferences.BASE_URL + "/trip";
 
     // Class Attributes
-    private LocationManager locationManager;
-    private AlertDialog locationDisabledWarningDialog;
-    private OnPermissionsGrantedHandler onLocationPermissionGrantedHandler;
-    private LocationChangeReceiver locationChangeReceiver;
     private MainActivity mActivity;
 
     public TripRequestFragment() {
@@ -88,10 +80,6 @@ public class TripRequestFragment extends Fragment implements LocationListener {
     private void init(View view) {
         Log.d(TAG, "init - Start");
 
-        locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
-        onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
-        locationChangeReceiver = new LocationChangeReceiver();
-
         mActivity = (MainActivity) getActivity();
 
 //        ((MainActivity) getActivity()).getClient().getId();
@@ -103,17 +91,6 @@ public class TripRequestFragment extends Fragment implements LocationListener {
         mActivity.enbleNavigationView();
 
         Log.d(TAG, "init - End");
-    }
-
-    private OnPermissionsGrantedHandler createOnLocationPermissionGrantedHandler() {
-        return new OnPermissionsGrantedHandler() {
-            @Override
-            public void onPermissionsGranted() {
-                if(checkLocationService()){
-                    goToRequestDialog();
-                }
-            }
-        };
     }
 
     public void goToRequestDialog() {
@@ -138,8 +115,6 @@ public class TripRequestFragment extends Fragment implements LocationListener {
                 else {
                     goToRequestDialog();
                 }
-//                PermissionsChecker.checkPermissions(TripRequestFragment.this, onLocationPermissionGrantedHandler,
-//                        PERM_LOCATION_RQST_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
             }
         });
     }
@@ -170,83 +145,5 @@ public class TripRequestFragment extends Fragment implements LocationListener {
         fragmentTransaction.addToBackStack(TAG);
         fragmentTransaction.commit();
     }
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode){
-            case PERM_LOCATION_RQST_CODE:
-                if(PermissionsChecker.permissionsGranted(grantResults)){
-                    onLocationPermissionGrantedHandler.onPermissionsGranted();
-                }
-                break;
-        }
-    }
-
-    private boolean checkLocationService() {
-        boolean gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        if (!gpsEnabled) {
-            if (locationDisabledWarningDialog == null || !locationDisabledWarningDialog.isShowing()) {
-                showGPSDisabledWarningDialog();
-                getActivity().registerReceiver(locationChangeReceiver, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
-            }
-        } else {
-            if (locationDisabledWarningDialog != null && locationDisabledWarningDialog.isShowing()) {
-                locationDisabledWarningDialog.dismiss();
-            }
-        }
-        return gpsEnabled;
-    }
-
-    private void showGPSDisabledWarningDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.DialogTheme);
-        builder.setTitle(R.string.GPS_disabled_warning_title);
-        builder.setMessage(R.string.GPS_disabled_warning_msg);
-        builder.setPositiveButton(R.string.ok_btn_dialog, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(i);
-            }
-        });
-        builder.setCancelable(false);
-        locationDisabledWarningDialog = builder.create();
-        locationDisabledWarningDialog.show();
-    }
-
-    // ---------------------------------------------------------------
-    // Location interface methods
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.d(TAG, "onLocationChanged - Start");
-        Log.d(TAG, "onLocationChanged - End");
-    }
-
-    @Override
-    public void onStatusChanged(String s, int i, Bundle bundle) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String s) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String s) {
-
-    }
-
-    private final class LocationChangeReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(LocationManager.PROVIDERS_CHANGED_ACTION)){
-                checkLocationService();
-                getActivity().unregisterReceiver(this);
-            }
-        }
-    }
-
 
 }
