@@ -26,8 +26,11 @@
         <activity
             android:name=".activity.MainActivity"
             android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop">
         </activity>
+
+        <service android:name="ForegroundService" android:stopWithTask="true" />
 
         <meta-data
             android:name="io.fabric.ApiKey"

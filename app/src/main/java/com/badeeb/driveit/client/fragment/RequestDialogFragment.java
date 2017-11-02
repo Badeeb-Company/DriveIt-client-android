@@ -154,6 +154,7 @@ public class RequestDialogFragment extends DialogFragment {
                 switch (requestStatus) {
                     case FINDING_DRIVERS:
                         removeTripListener();
+                        mactivity.stopForegroundOnlineService();
                         cancelRide();
                         break;
                 }
@@ -166,9 +167,6 @@ public class RequestDialogFragment extends DialogFragment {
                 if (requestStatus == RequestStatus.LOCATION_FOUND) {
                     onFindingDrivers();
                 }
-//                else if (requestStatus == RequestStatus.LOCATION_NOT_FOUND) {
-//                    onFindingLocation();
-//                }
                 else if (requestStatus == RequestStatus.NOT_SERVED) {
                     onLocationFound();
                 }
@@ -247,6 +245,8 @@ public class RequestDialogFragment extends DialogFragment {
             request.setLat(mCurrentLocation.getLatitude() + "");
             request.setLng(mCurrentLocation.getLongitude() + "");
             request.setDestination(mCurrentAddress);
+
+            mactivity.startForegroundOnlineService();
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
@@ -368,6 +368,7 @@ public class RequestDialogFragment extends DialogFragment {
                         onTripAccepted();
                     } else if (fdbTrip.getState().equals(AppPreferences.TRIP_NOT_SERVED)) {
                         onTripNotServed();
+                        mactivity.stopForegroundOnlineService();
                     }
                 }
             }
@@ -383,6 +384,7 @@ public class RequestDialogFragment extends DialogFragment {
         requestStatus = RequestStatus.ACCEPTED;
         removeTripListener();
         if (!paused) {
+            mactivity.stopForegroundOnlineService();
             TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
             Bundle bundle = new Bundle();
             bundle.putParcelable("trip", Parcels.wrap(mtrip));
@@ -544,6 +546,6 @@ public class RequestDialogFragment extends DialogFragment {
         tripReference.removeEventListener(tripEventListener);
     }
 
-    private enum RequestStatus {FINDING_LOCATION, LOCATION_FOUND, LOCATION_NOT_FOUND, FINDING_DRIVERS, ACCEPTED, NOT_SERVED}
+    private enum RequestStatus {FINDING_LOCATION, LOCATION_FOUND, FINDING_DRIVERS, ACCEPTED, NOT_SERVED}
 
 }

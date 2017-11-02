@@ -1,5 +1,6 @@
 package com.badeeb.driveit.client.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -23,6 +24,7 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.badeeb.driveit.client.ForegroundService;
 import com.badeeb.driveit.client.R;
 import com.badeeb.driveit.client.fragment.LoginFragment;
 import com.badeeb.driveit.client.fragment.TripRequestFragment;
@@ -175,6 +177,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fragmentTransaction.replace(R.id.main_frame, updateAddressFragment, UpdateAddressFragment.TAG);
         fragmentTransaction.addToBackStack(UpdateAddressFragment.TAG);
         fragmentTransaction.commit();
+    }
+
+    public void startForegroundOnlineService() {
+        Intent foregroundServiceIntent = new Intent(this, ForegroundService.class);
+        foregroundServiceIntent.putExtra(ForegroundService.STOP_FOREGROUND_SERVICE, false);
+        startService(foregroundServiceIntent);
+    }
+
+    public void stopForegroundOnlineService() {
+        Intent foregroundServiceIntent = new Intent(this, ForegroundService.class);
+        foregroundServiceIntent.putExtra(ForegroundService.STOP_FOREGROUND_SERVICE, true);
+        startService(foregroundServiceIntent);
     }
 
     public void disbleNavigationView() {
