@@ -29,6 +29,7 @@ import com.badeeb.driveit.client.fragment.TripRequestFragment;
 import com.badeeb.driveit.client.fragment.UpdateAddressFragment;
 import com.badeeb.driveit.client.model.JsonLogin;
 import com.badeeb.driveit.client.model.JsonLogout;
+import com.badeeb.driveit.client.model.Trip;
 import com.badeeb.driveit.client.model.User;
 import com.badeeb.driveit.client.network.MyVolley;
 import com.badeeb.driveit.client.shared.AppPreferences;
@@ -95,9 +96,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Log.d(TAG, "onNavigationItemSelected - Logout - Start");
             msettings.clearUserInfo();
             goToLogin();
-        }
-        else if (id == R.id.nav_address) {
-            goToUpdateAddress();
+        } else if (id == R.id.nav_address) {
+            UpdateAddressFragment updateAddressFragment = (UpdateAddressFragment) getSupportFragmentManager()
+                    .findFragmentByTag(UpdateAddressFragment.TAG);
+            if (updateAddressFragment == null || !updateAddressFragment.isVisible()) {
+                goToUpdateAddress();
+            }
+
+        } else if (id == R.id.nav_request_delivery) {
+            TripRequestFragment tripRequestFragment = (TripRequestFragment) getSupportFragmentManager()
+                    .findFragmentByTag(TripRequestFragment.TAG);
+            if (tripRequestFragment == null || !tripRequestFragment.isVisible()) {
+                goToTripRequestFragment();
+            }
+
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -134,10 +146,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (msettings.isLoggedIn()) {
             mclient = msettings.getUser();
             setNavigationViewValues(mclient);
-            TripRequestFragment tripRequestFragment = new TripRequestFragment();
-            FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
-            fragmentTransaction.add(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
-            fragmentTransaction.commit();
+            goToTripRequestFragment();
         } else {
             goToLogin();
         }
@@ -153,11 +162,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fragmentTransaction.commit();
     }
 
+    private void goToTripRequestFragment() {
+        TripRequestFragment tripRequestFragment = new TripRequestFragment();
+        FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.main_frame, tripRequestFragment, tripRequestFragment.TAG);
+        fragmentTransaction.commit();
+    }
+
     private void goToUpdateAddress() {
         UpdateAddressFragment updateAddressFragment = new UpdateAddressFragment();
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.main_frame, updateAddressFragment, updateAddressFragment.TAG);
-        fragmentTransaction.addToBackStack(updateAddressFragment.TAG);
+        fragmentTransaction.replace(R.id.main_frame, updateAddressFragment, UpdateAddressFragment.TAG);
+        fragmentTransaction.addToBackStack(UpdateAddressFragment.TAG);
         fragmentTransaction.commit();
     }
 

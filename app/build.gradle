@@ -22,7 +22,7 @@ android {
         applicationId "com.badeeb.driveit.client"
         minSdkVersion 15
         targetSdkVersion 26
-        versionCode 5
+        versionCode 6
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
